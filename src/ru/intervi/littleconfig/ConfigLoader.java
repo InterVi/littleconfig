@@ -221,9 +221,9 @@ public class ConfigLoader { //чтение конфига из файла и п�
 			if (file[index] != null) pos = index;
 		} else Log.info("ConfigLoader getStringArray(index): get " + index + " failed (config not loaded or file = null)");
 		if (pos != -1) { //если переменная найдена, то начинаем проверку и последующее извелечение данных
-			isarray is = new isarray();
-			is = isArray(file[pos], pos); //проверка, является ли переменная массивом и если да, то каким именно
-			if(is.isArray) {
+			IsArray is = new IsArray();
+			is = IsArray(file[pos], pos); //проверка, является ли переменная массивом и если да, то каким именно
+			if(is.IsArray) {
 				if(is.isSkobka) { //получение массива, заключенного в квадратные скобки
 					String arr = file[pos];
 					boolean empty; //проверка пустой ли массив (просто [])
@@ -255,7 +255,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 				} else { //получение массива, перечисленного через тире
 					int leng = 0;
 					int pp = pos+1;
-					while(isArray(file[pp])) {leng++; pp++; if (pp >= file.length) break;}
+					while(IsArray(file[pp])) {leng++; pp++; if (pp >= file.length) break;}
 					result = new String[leng];
 					pp = pos+1;
 					for(int i = 0; i < leng; i++) {
@@ -286,15 +286,15 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		return result;
 	}
 	
-	public class isarray { //класс для возвращение результата проверки переменной на массив
-		public boolean isArray = false; //массив ли эта переменная
+	public class IsArray { //класс для возвращение результата проверки переменной на массив
+		public boolean IsArray = false; //массив ли эта переменная
 		public boolean isSkobka = false; //данные в квадратных скобках или через тире
 		public boolean isCheck = false; //удалась ли проверка
 	}
 	
-	private isarray isArray(String s, int p) { //проверка переменной на то, является ли она массивом
+	private IsArray IsArray(String s, int p) { //проверка переменной на то, является ли она массивом
 		boolean result = false;
-		isarray res = new isarray();
+		IsArray res = new IsArray();
 		if (s == null) return res;
 		int ps1 = s.indexOf("[");
 		int ps2 = s.lastIndexOf("]");
@@ -306,13 +306,13 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		if (result == false && get == true && file != null) { //если нет, то проверка, не перечислены ли они через тире
 			if ((p+1) < file.length) {
 				res.isCheck = true;
-				result = isArray(file[p+1]);
-		}} else if (result != false && get == false | file == null) Log.info("ConfigLoader isArray: " + s + " failed check, not loaded config");
-		res.isArray = result;
+				result = IsArray(file[p+1]);
+		}} else if (result != false && get == false | file == null) Log.info("ConfigLoader IsArray: " + s + " failed check, not loaded config");
+		res.IsArray = result;
 		return res;
 	}
 	
-	private boolean isArray(String s) { //проверка, является ли строка компонентом массива (т.е. начинается с тире)
+	private boolean IsArray(String s) { //проверка, является ли строка компонентом массива (т.е. начинается с тире)
 		boolean result = false;
 		if (s == null) return result;
 		String check = s;
@@ -416,7 +416,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		if (index >= file.length) {Log.info("ConfigLoader isSet: failed, index > file.length"); return result;}
 		if (get == true && file != null) {
 			result = isParam(index); //является ли строка параметром
-			if (index+1 < file.length) {if (!result && isArray(file[index+1])) result = true;} //является ли она массивом
+			if (index+1 < file.length) {if (!result && IsArray(file[index+1])) result = true;} //является ли она массивом
 			if (!result && index+1 < file.length) {
 				if (file[index+1].indexOf(":") > 1) result = true; //является ли она секцией (упрощенный вариант проверки)
 			}
@@ -440,10 +440,10 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		if (get == true && file != null) {
 			pos = index;
 			if (pos > -1) { //если переменная найдена
-				isarray isr = isArray(file[pos], pos);
-				result = isr.isArray;
+				IsArray isr = IsArray(file[pos], pos);
+				result = isr.IsArray;
 				if (result && !isr.isSkobka) { //если массив через тире, то проверяем, есть ли хотя бы 1 элемент
-					result = isArray(file[pos+1]);
+					result = IsArray(file[pos+1]);
 					if (result) { //проверка, не пустой ли этот элемент
 						if (utils.trim(file[pos+1]).length() > 1) result = true; else result = false;
 					}
@@ -480,7 +480,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		if (index < 0) {Log.info("ConfigLoader isParam: failed, index < 0"); return result;}
 		if (get == true && file != null & file[index] != null) {
 			String str = file[index].trim();
-			if (str.indexOf(":") > 0 && !isArray(file[index])) { //проверка, есть ли что-то после двоеточия (элементы массивов не учитываем)
+			if (str.indexOf(":") > 0 && !IsArray(file[index])) { //проверка, есть ли что-то после двоеточия (элементы массивов не учитываем)
 				String afterr[] = str.split(":");
 				if (afterr.length > 1) {
 					String after = afterr[1];
@@ -545,7 +545,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 			int posprob = getProbels(index), next = index+1;
 			if (next < file.length) {
 				int nextprob = getProbels(next);
-				if (!isParam(index) & !isArray(file[next]) && nextprob > posprob) result = true;
+				if (!isParam(index) & !IsArray(file[next]) && nextprob > posprob) result = true;
 				if (result) {
 					boolean param = false; int i = next;
 					do {
@@ -840,12 +840,12 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		public String[] RecStringArray(int index) { //получить массив строк по индексу
 			return getStringArray(index);
 		}
-		public isarray getIsArrayResult() { //получить внутренний класс isarray
-			isarray is = new isarray();
+		public IsArray getIsArrayResult() { //получить внутренний класс IsArray
+			IsArray is = new IsArray();
 			return is;
 		}
-		public isarray IsArray(String line, int index) { //проверить массив внутренним методом isArray
-			return isArray(line, index);
+		public IsArray IsArray(String line, int index) { //проверить массив внутренним методом IsArray
+			return IsArray(line, index);
 		}
 	}
 	public LoaderMethods Methods = new LoaderMethods();
