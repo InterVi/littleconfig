@@ -7,6 +7,9 @@ import java.util.ArrayList;
 
 import ru.intervi.littleconfig.utils.EasyLogger;
 
+/**
+ * запись и изменение файла конфигурации
+ */
 public class ConfigWriter { //запись и изменение конфига
 	private EasyLogger Log = new EasyLogger();
 	

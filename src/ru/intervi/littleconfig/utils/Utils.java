@@ -1,7 +1,17 @@
 package ru.intervi.littleconfig.utils;
 
+/**
+ * разные полезные утилиты
+ */
 public class Utils { //разные полезные методы
-	public String remChars(String s, int p1, int p2) { //метод для вырезания символов из строк
+	/**
+	 * удаляет часть из строки
+	 * @param s строка
+	 * @param p1 первый индекс
+	 * @param p2 второй индекс
+	 * @return строка без части, находящейся между p1 и p2
+	 */
+	public static String remChars(String s, int p1, int p2) { //метод для вырезания символов из строк
 		   String pp1, pp2, result;
 		   if (p1 > -1 && p2 > p1 && p2 <= s.length()) {
 			   	int pr = p2 - p1; pr = p1 + pr;
@@ -12,7 +22,13 @@ public class Utils { //разные полезные методы
 		   return result;
 	}
 	
-	public String remChar(String s, char c) { //чистка от символа
+	/**
+	 * удаляет из строки символ
+	 * @param s строка
+	 * @param c символ
+	 * @return строка без символа
+	 */
+	public static String remChar(String s, char c) { //чистка от символа
 		char str[] = s.toCharArray();
 		char result[] = new char[str.length];
 		for (int i = 0; i < str.length; i++) {
@@ -21,7 +37,12 @@ public class Utils { //разные полезные методы
 		return new String(result);
 	}
 	
-	public String trim(String s) { //чистка от пробелов
+	/**
+	 * удаляет все пробелы из строки
+	 * @param s строка
+	 * @return строка без пробелов
+	 */
+	public static String trim(String s) { //чистка от пробелов
 		return new String(remChar(s, ' '));
 	}
 }

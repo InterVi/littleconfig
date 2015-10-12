@@ -10,8 +10,10 @@ import java.util.ArrayList;
 import ru.intervi.littleconfig.utils.Utils;
 import ru.intervi.littleconfig.utils.EasyLogger;
 
+/**
+ * чтение файла конфигурации
+ */
 public class ConfigLoader { //чтение конфига из файла и получение значений
-	private Utils utils = new Utils();
 	private EasyLogger Log = new EasyLogger();
 	
 	private boolean get = false;
@@ -51,7 +53,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 				while(text.ready()) {
 					String line = text.readLine();
 					if (line != null) {
-						if (line.trim().indexOf('#') != 0 && utils.trim(line).length() > 0) { //если строка - комментарий или пустая, не добавляем ее
+						if (line.trim().indexOf('#') != 0 && Utils.trim(line).length() > 0) { //если строка - комментарий или пустая, не добавляем ее
 							list.add(line);
 						}
 					}
@@ -81,11 +83,11 @@ public class ConfigLoader { //чтение конфига из файла и п�
 				int check = ch.indexOf('"'); //исключаем данные из параметра
 				int check2 = ch.lastIndexOf('"');
 				if (check > -1 & check2 > -1 & check2 > check) {
-					ch = utils.remChars(s[i], check, check2);
+					ch = Utils.remChars(s[i], check, check2);
 				}
 				if (ch.indexOf('#') > -1) { //если коммент все же есть, удаляем его
 					ch = s[i];
-					s[i] = utils.remChars(s[i], s[i].indexOf('#'), s[i].length());
+					s[i] = Utils.remChars(s[i], s[i].indexOf('#'), s[i].length());
 				}
 				if (ch.equals(s[i])) s[i] = " "; //на случай ошибок обрезки, в основном когда коммент на всю строку
 			}}
@@ -104,13 +106,13 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		} else if (get == false) Log.info("ConfigLoader getString(index): " + index + "(index) file not loaded");
 		else if (file == null) Log.info("ConfigLoader getString(index): " + index + "(index) array file = null");
 		if (result != null && result.indexOf(":") > -1) { //обрезка до двоеточия
-			result = utils.remChars(result, 0, result.indexOf(":")+1).trim();
+			result = Utils.remChars(result, 0, result.indexOf(":")+1).trim();
 			//обрезка от скобки до скобки, если они есть
 			int ch = result.indexOf('"');
 			int ch2 = result.lastIndexOf('"');
 			if (ch > -1 & ch2 > -1 & ch2 > ch) {
-				result = utils.remChars(result, 0, ch+1);
-				result = utils.remChars(result, ch2-1, result.length());
+				result = Utils.remChars(result, 0, ch+1);
+				result = Utils.remChars(result, ch2-1, result.length());
 			}
 		} else if (result != null && result.indexOf(":") == -1) {Log.info("ConfigLoader getString(index): " + index + "(index) not ':', ride error"); result = null;}
 		if (result == null) Log.info("ConfigLoader getString(index): " + index + "(index) = null");
@@ -130,7 +132,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	private int getInt(int index) { //получение переменной типа int по индексу
 		String str = getString(index);
 		String name = getName(index);
-		if (str != null) str = utils.trim(str).toLowerCase(); else Log.info("ConfigLoader getInt: " + name + " str = null");
+		if (str != null) str = Utils.trim(str).toLowerCase(); else Log.info("ConfigLoader getInt: " + name + " str = null");
 		int num = 0;
 		String error = null;
 		try {
@@ -152,7 +154,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	private long getLong(int index) { //получение переменной типа long по индексу
 		String name = getName(index);
 		String str = getString(index);
-		if (str != null) str = utils.trim(str).toLowerCase(); else Log.info("ConfigLoader getLong: " + name + " str = null");
+		if (str != null) str = Utils.trim(str).toLowerCase(); else Log.info("ConfigLoader getLong: " + name + " str = null");
 		long num = 0;
 		String error = null;
 		try {
@@ -172,7 +174,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	private double getDouble(int index) { //получение переменной типа double по индексу
 		String str = getString(index);
 		String name = getName(index);
-		if (str != null) str = utils.trim(str).toLowerCase(); else Log.info("ConfigLoader getDouble: " + name + " str = null");
+		if (str != null) str = Utils.trim(str).toLowerCase(); else Log.info("ConfigLoader getDouble: " + name + " str = null");
 		double num = 0;
 		String error = null;
 		try {
@@ -192,7 +194,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	private boolean getBoolean(int index) { //получение переменной типа boolean по индексу
 		String str = getString(index);
 		String name = getName(index);
-		if (str != null) str = utils.trim(str).toLowerCase(); else Log.info("ConfigLoader getBoolean: " + name + " str = null");
+		if (str != null) str = Utils.trim(str).toLowerCase(); else Log.info("ConfigLoader getBoolean: " + name + " str = null");
 		boolean res = false;
 		if (str != null && str.equals("true") | str.equals("false")) {
 			res = Boolean.parseBoolean(str);
@@ -228,9 +230,9 @@ public class ConfigLoader { //чтение конфига из файла и п�
 					String arr = file[pos];
 					boolean empty; //проверка пустой ли массив (просто [])
 					if ((arr.lastIndexOf("]") - (arr.indexOf("["))) > 2) empty = false; else empty = true;
-					arr = utils.remChars(arr, 0, arr.indexOf("[")+1);
-					arr = utils.remChars(arr, arr.lastIndexOf("]"), arr.length());
-					if (utils.trim(arr).length() > 2 && empty == false) empty = false; else empty = true; //еще проверка
+					arr = Utils.remChars(arr, 0, arr.indexOf("[")+1);
+					arr = Utils.remChars(arr, arr.lastIndexOf("]"), arr.length());
+					if (Utils.trim(arr).length() > 2 && empty == false) empty = false; else empty = true; //еще проверка
 					if (empty == false) {
 					String[] result2 = null;
 					result2 = arr.split(",");
@@ -246,8 +248,8 @@ public class ConfigLoader { //чтение конфига из файла и п�
 							int ch = result[i].indexOf('"');
 							int ch2 = result[i].lastIndexOf('"');
 							if (ch > -1 & ch2 > -1 & ch2 > ch) {
-								result[i] = utils.remChars(result[i], 0, ch+1);
-								result[i] = utils.remChars(result[i], ch2-1, result[i].length());
+								result[i] = Utils.remChars(result[i], 0, ch+1);
+								result[i] = Utils.remChars(result[i], ch2-1, result[i].length());
 							}
 						}
 					}
@@ -259,13 +261,13 @@ public class ConfigLoader { //чтение конфига из файла и п�
 					result = new String[leng];
 					pp = pos+1;
 					for(int i = 0; i < leng; i++) {
-						result[i] = utils.remChars(file[pp], 0, file[pp].indexOf("-")+1).trim();
+						result[i] = Utils.remChars(file[pp], 0, file[pp].indexOf("-")+1).trim();
 						//обрезка от скобки до скобки, если они есть
 						int ch = result[i].indexOf('"');
 						int ch2 = result[i].lastIndexOf('"');
 						if (ch > -1 & ch2 > -1 & ch2 > ch) {
-							result[i] = utils.remChars(result[i], 0, ch+1);
-							result[i] = utils.remChars(result[i], ch2-1, result[i].length());
+							result[i] = Utils.remChars(result[i], 0, ch+1);
+							result[i] = Utils.remChars(result[i], ch2-1, result[i].length());
 						}
 						pp++;
 					}
@@ -319,7 +321,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		boolean check2 = false; //является ли тире первым символом в строке
 		int tir = check.indexOf("-");
 		if (tir > -1) { //проверка, является ли тире первым символом в строке (в таком случае это - ячейка массива)
-			String check3 = utils.trim(check).substring(0, 1);
+			String check3 = Utils.trim(check).substring(0, 1);
 			if (check3.equals("-")) check2 = true; else check2 = false;
 		}
 		result = check2;
@@ -445,14 +447,14 @@ public class ConfigLoader { //чтение конфига из файла и п�
 				if (result && !isr.isSkobka) { //если массив через тире, то проверяем, есть ли хотя бы 1 элемент
 					result = IsArray(file[pos+1]);
 					if (result) { //проверка, не пустой ли этот элемент
-						if (utils.trim(file[pos+1]).length() > 1) result = true; else result = false;
+						if (Utils.trim(file[pos+1]).length() > 1) result = true; else result = false;
 					}
 				}
 				if (result && isr.isSkobka) { //если массив через квадратные скобки, проверяем, есть ли там хотя бы 1 символ
 					String arr = file[pos];
-					arr = utils.remChars(arr, 0, arr.indexOf("[")+1);
-					arr = utils.remChars(arr, arr.lastIndexOf("]"), arr.length());
-					if (utils.trim(arr).length() > 2) result = true; else result = false;
+					arr = Utils.remChars(arr, 0, arr.indexOf("[")+1);
+					arr = Utils.remChars(arr, arr.lastIndexOf("]"), arr.length());
+					if (Utils.trim(arr).length() > 2) result = true; else result = false;
 				}
 			}
 		} else Log.info("ConfigLoader isSet: failed check " + name + ", config not loaded");
@@ -469,7 +471,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		if (index < 0) {Log.info("ConfigLoader getProbels: failed, index < 0"); return result;}
 		if (get == true && file != null & file[index] != null) {
 			String str = file[index];
-			String name = utils.remChars(str.trim(), str.indexOf(":"), str.length());
+			String name = Utils.remChars(str.trim(), str.indexOf(":"), str.length());
 			result = str.indexOf(name); //где первый символ названия и есть кол-во пробелов до него
 		} else Log.info("ConfigLoader getProbels: failed check " + index + ", config not loaded or file[i] == null");
 		return result;
@@ -485,7 +487,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 				if (afterr.length > 1) {
 					String after = afterr[1];
 					if (after != null) {
-						after = utils.trim(after);
+						after = Utils.trim(after);
 						if (after.length() > 0) result = true;
 					}
 				}
@@ -499,7 +501,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		if (index < 0) {Log.info("ConfigLoader getName: failed, index < 0"); return result;}
 		if (get == true && file != null & file[index] != null && file[index].indexOf(":") != -1) {
 			result = file[index].trim();
-			result = utils.remChars(result, result.indexOf(":"), result.length());
+			result = Utils.remChars(result, result.indexOf(":"), result.length());
 		} else Log.info("ConfigLoader getName: failed check " + index + ", config not loaded or file[i] == null");
 		return result;
 	}
@@ -510,7 +512,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		if (get == true && file != null) {
 			for (int i = 0; i < file.length; i++) {
 				if (file[i] != null) {
-					if (utils.remChars(file[i], file[i].indexOf(":"), file[i].length()).trim().equals(name)) {
+					if (Utils.remChars(file[i], file[i].indexOf(":"), file[i].length()).trim().equals(name)) {
 						if (isSection(i)) {
 							result = i;
 							break;
@@ -527,7 +529,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		if (get == true && file != null) {
 			for (int i = 0; i < file.length; i++) {
 				if (file[i] != null) {
-					if (utils.remChars(file[i], file[i].indexOf(":"), file[i].length()).trim().equals(name)) {
+					if (Utils.remChars(file[i], file[i].indexOf(":"), file[i].length()).trim().equals(name)) {
 						if (isSet(i) && !isSection(i)) {
 							result = i;
 							break;
