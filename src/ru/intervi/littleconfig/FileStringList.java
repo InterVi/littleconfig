@@ -10,6 +10,18 @@ import java.util.ArrayList;
  * простой класс для чтения и записи файла на основе ArrayList<String>
  */
 public class FileStringList { //класс-основа для создания БД на файле
+	public FileStringList() {}
+	/**
+	 * вызывает метод read(String file)
+	 * @param file путь к текстовому файлу
+	 */
+	public FileStringList(String file) {read(file);}
+	/**
+	 * вызывает метод read(File file)
+	 * @param file объект File текстового файла
+	 */
+	public FileStringList(File file) {read(file);}
+	
 	private ArrayList<String> list = new ArrayList<String>();
 	
 	/**
@@ -69,7 +81,7 @@ public class FileStringList { //класс-основа для создания 
 	 * @return строки из прочтенного файла
 	 */
 	public ArrayList<String> get() { //получение ArrayList
-		return list;
+		return this.list;
 	}
 	
 	/**
