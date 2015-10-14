@@ -17,11 +17,11 @@ array3:
 - value 1
 - value 2
 array4:
-&nbsp;&nbsp;- "value 1"
+  - "value 1"
 - value 2
 section:
-&nbsp;&nbsp;key1: value
-&nbsp;&nbsp;array1: [value 1, value 2]
+  key1: value
+  array1: [value 1, value 2]
 ```
 
 На данный момент библиотека приводится к удобному виду, публикация вики и JavaDoc будет позднее.
