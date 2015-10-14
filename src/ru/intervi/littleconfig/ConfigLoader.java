@@ -11,24 +11,24 @@ import ru.intervi.littleconfig.utils.Utils;
 import ru.intervi.littleconfig.utils.EasyLogger;
 
 /**
- * <p>чтение файла конфигурации</p>
- * <p><b>Пример конфига:</b><br/>
- * key1: value<br/>
- *   key2:"value"<br/>
- * #comment<br/>
- * array1: [value 1, value 2] #comment<br/>
- * array2:["value 1","value 2"]<br/>
- * array3:<br/>
- * - value 1<br/>
- * - value 2<br/>
- * array4:<br/>
- * &nbsp;&nbsp;- "value 1"<br/>
- * - value 2<br/>
- * section:<br/>
- * &nbsp;&nbsp;key1: value<br/>
- * &nbsp;&nbsp;array1: [value 1, value 2]</p>
+ * чтение файла конфигураци
  */
 public class ConfigLoader { //чтение конфига из файла и получение значений
+	/**
+	 * необходимо загрузить конфиг для работы с ним
+	 */
+	public ConfigLoader() {}
+	/**
+	 * вызывает метод load(String f)
+	 * @param file путь к конфигу
+	 */
+	public ConfigLoader(String file) {load(file);}
+	/**
+	 * вызывает метод load(File f)
+	 * @param file объект File конфига для чтения
+	 */
+	public ConfigLoader(File file) {load(file);}
+	
 	private EasyLogger Log = new EasyLogger();
 	
 	private boolean get = false;
@@ -49,7 +49,24 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	}
 	
 	/**
-	 * загрузить конфиг
+	 * <p>прочитать конфиг</p>
+	 * <p>
+	 * <b>Пример конфига:</b><br/>
+	 * key1: value<br/>
+	 *   key2:"value"<br/>
+	 * #comment<br/>
+	 * array1: [value 1, value 2] #comment<br/>
+	 * array2:["value 1","value 2"]<br/>
+	 * array3:<br/>
+	 * - value 1<br/>
+	 * - value 2<br/>
+	 * array4:<br/>
+	 * &nbsp;&nbsp;- "value 1"<br/>
+	 * - value 2<br/>
+	 * section:<br/>
+	 * &nbsp;&nbsp;key1: value<br/>
+	 * &nbsp;&nbsp;array1: [value 1, value 2]
+	 * </p>
 	 * @param f путь к конфигу
 	 */
 	public void load(String f) { //загрузка конфина
@@ -62,8 +79,8 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	}
 	
 	/**
-	 * загрузить конфиг
-	 * @param f объект File конфига для загрузки
+	 * прочитать конфиг
+	 * @param f объект File конфига для чтения
 	 */
 	public void load(File f) { //загрузка конфига
 		load(f.getAbsolutePath());
@@ -1137,5 +1154,8 @@ public class ConfigLoader { //чтение конфига из файла и п�
 			return IsArray(line, index);
 		}
 	}
+	/**
+	 * инициализированный объект LoaderMethods
+	 */
 	public LoaderMethods Methods = new LoaderMethods();
 }

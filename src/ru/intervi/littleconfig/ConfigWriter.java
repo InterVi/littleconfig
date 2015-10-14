@@ -11,12 +11,32 @@ import ru.intervi.littleconfig.utils.EasyLogger;
  * запись и изменение файла конфигурации
  */
 public class ConfigWriter { //запись и изменение конфига
+	/**
+	 * необходимо указать конфиг для работы с ним
+	 */
+	public ConfigWriter() {}
+	/**
+	 * вызывает метод setConfig(String file)
+	 * @param file путь к конфигу
+	 */
+	public ConfigWriter(String file) {setConfig(file);}
+	/**
+	 * вызывает метод setConfig(File file)
+	 * @param file объект File конфига для записи
+	 */
+	public ConfigWriter(File file) {setConfig(file);}
+	
 	private EasyLogger Log = new EasyLogger();
 	
 	private String file[] = null;
 	private boolean set = false, neew = true;
 	private String patch = null;
 	
+	/**
+	 * указать файл конфига
+	 * @param path путь к файлу
+	 * @return true если процесс удался; false если нет
+	 */
 	public boolean setConfig(String path) { //установка конфига
 		boolean result = false;
 		File f = new File(path);
@@ -40,6 +60,11 @@ public class ConfigWriter { //запись и изменение конфига
 		return result;
 	}
 	
+	/**
+	 * указать файл конфига
+	 * @param path объект File конфига для записи
+	 * @return true если процесс удался; false если нет
+	 */
 	public boolean setConfig(File path) { //установка конфига
 		return setConfig(path.getAbsolutePath());
 	}
@@ -88,6 +113,11 @@ public class ConfigWriter { //запись и изменение конфига
 		} else Log.info("ConfigWriter: error write var " + name + ", config file not set");
 	}
 	
+	/**
+	 * установить значение переменной
+	 * @param name имя переменной
+	 * @param value значение
+	 */
 	public void setOption(String name, String value) { //для внешних обращений
 		setOption(name, value, -1);
 	}
@@ -178,10 +208,22 @@ public class ConfigWriter { //запись и изменение конфига
 		} else Log.info("ConfigWriter: error write array " + name + ", config file not set");
 	}
 	
+	/**
+	 * установить значение массива
+	 * @param name имя переменной с массивом
+	 * @param value массив строк
+	 * @param skobka перечислить ли значения через запятую в квадратных скобках или через перевод строки и тире
+	 */
 	public void setArray(String name, String[] value, boolean skobka) { //для внешних обращений
 		setArray(name, value, skobka, -1);
 	}
 	
+	/**
+	 * установить значение переменной в секции
+	 * @param name имя переменной
+	 * @param value значение
+	 * @param section имя секции
+	 */
 	public void setOptionInSection(String name, String value, String section) { //запись опции в секцию
 		if (set && patch != null) {
 			if (!neew) {
@@ -220,6 +262,13 @@ public class ConfigWriter { //запись и изменение конфига
 		} else Log.info("ConfigWriter: error write var " + name + " in section " + section + ", config file not set");
 	}
 	
+	/**
+	 * установить значение массива в секции
+	 * @param name имя переменной с массивом
+	 * @param value массив строк
+	 * @param skobka перечислить ли значения через запятую в квадратных скобках или через перевод строки и тире
+	 * @param section имя секции
+	 */
 	public void setArrayInSection(String name, String value[], boolean skobka, String section) { //запись массива в секцию
 		if (set && patch != null) {
 			if (!neew) {
@@ -297,6 +346,10 @@ public class ConfigWriter { //запись и изменение конфига
 		} else Log.info("ConfigWriter: error delete var " + name + ", config file not set");
 	}
 	
+	/**
+	 * удалить переменную из конфига
+	 * @param name имя переменной
+	 */
 	public void delOption(String name) { //для внешних обращений
 		delOption(name, -1);
 	}
@@ -325,10 +378,19 @@ public class ConfigWriter { //запись и изменение конфига
 		} else Log.info("ConfigWriter: error delete array " + name + ", config file not set");
 	}
 	
+	/**
+	 * удалить массив из конфига
+	 * @param name имя переменной с массивом
+	 */
 	public void delArray(String name) { //для внешних обращений
 		delArray(name, -1);
 	}
 	
+	/**
+	 * удалить переменную из секции
+	 * @param name имя переменной
+	 * @param section имя секции
+	 */
 	public void delOptionInSection(String name, String section) { //удаление параметра из секции
 		if (set && patch != null) {
 			if (!neew) {
@@ -342,6 +404,11 @@ public class ConfigWriter { //запись и изменение конфига
 		} else Log.info("ConfigWriter: error delete var " + name + " from section " + section + ", config file not set");
 	}
 	
+	/**
+	 * удалить массив из секции
+	 * @param name имя переменной с массивом
+	 * @param section имя секции
+	 */
 	public void delArrayInSection(String name, String section) { //удаление массива из секции
 		if (set && patch != null) {
 			if (!neew) {
@@ -355,6 +422,10 @@ public class ConfigWriter { //запись и изменение конфига
 		} else Log.info("ConfigWriter: error delete array " + name + " from section " + section + ", config file not set");
 	}
 	
+	/**
+	 * удалить секцию
+	 * @param section имя секции
+	 */
 	public void delSection(String section) {
 		if (set && patch != null) {
 			if (!neew) {
@@ -374,6 +445,10 @@ public class ConfigWriter { //запись и изменение конфига
 		} else Log.info("ConfigWriter: error delete section " + section + ", config file not set");
 	}
 	
+	/**
+	 * удалить файл конфига
+	 * @return true если удалось удалить; false если нет
+	 */
 	public boolean removeConfig() { //удалить весь конфиг (сам файл)
 		boolean result = false;
 		if (set && patch != null) {
@@ -385,23 +460,60 @@ public class ConfigWriter { //запись и изменение конфига
 		return result;
 	}
 	
+	/**
+	 * класс со внутренними методами для работы с конфигом
+	 */
 	public class WriterMethods { //класс со внутренними методами
+		/**
+		 * установить значение переменной по индексу
+		 * @param name имя переменной
+		 * @param value значение
+		 * @param index индекс в конфиге
+		 */
 		public void SetOption(String name, String value, int index) { //установить опцию по индексу
 			setOption(name, value, index);
 		}
+		/**
+		 * установить значение массива по индексу
+		 * @param name имя переменной с массивом
+		 * @param value массив строк
+		 * @param skobka перечислить ли значения через запятую в квадратных скобках или через перевод строки и тире
+		 * @param index индекс в конфиге
+		 */
 		public void SetArray(String name, String[] value, boolean skobka, int index) { //установить массив по индексу
 			setArray(name, value, skobka, index);
 		}
+		/**
+		 * удалить опцию по индексу
+		 * @param name имя опции
+		 * @param index индекс в конфиге
+		 */
 		public void DelOption(String name, int index) { //удалить опцию по индексу
 			delOption(name, index);
 		}
+		/**
+		 * удалить массив по индексу
+		 * @param name имя переменной с массивом
+		 * @param index индекс в конфиге
+		 */
 		public void DelArray(String name, int index) { //удалить массив по индексу
 			delArray(name, index);
 		}
+		/**
+		 * получть весь класс
+		 * @return new WriterMethods()
+		 */
 		public WriterMethods getMethods() {return new WriterMethods();} //получить весь класс
 	}
+	/**
+	 * инициализированный объект WriterMethods
+	 */
 	public WriterMethods Methods = new WriterMethods();
 	
+	/**
+	 * записать массив строк в конфиг как есть (создаст новый файл или полностью перепишет старый)
+	 * @param array массив строк
+	 */
 	public void writeArray(String[] array) { //запись массива строк в файл как есть (создает новый конфиг или полностью перезаписывает текущий)
 		if (set && patch != null) {
 			if (array != null) {
