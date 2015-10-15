@@ -3,14 +3,14 @@ package ru.intervi.littleconfig;
 /**
  * Данные о версии и авторе. Позднее будет добавлена лицензия.
  * @author InterVi
- * @version 0.0.9
+ * @version 0.1.0
  */
 
 public class Version { //информация о библиотеке
 	/**
 	 * версия библиотееки
 	 */
-	public static final String version = "0.0.9";
+	public static final String version = "0.1.0";
 	/**
 	 * автор
 	 */

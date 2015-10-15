@@ -1,5 +1,10 @@
 package ru.intervi.littleconfig.utils;
 
+import java.lang.Class;
+import java.io.File;
+import java.io.InputStream;
+import java.io.FileOutputStream;
+
 /**
  * разные полезные утилиты
  */
@@ -225,5 +230,55 @@ public class Utils { //разные полезные методы
 			for (int i = 0; i < s.length; i++) result[i] = Boolean.parseBoolean(s[i]);
 		} catch(Exception e) {e.printStackTrace();}
 		return result;
+	}
+	
+	/**
+	 * получить путь к папке с jar
+	 * @param c класс, от которого берется путь
+	 * @return объект File папки с jar (null в случае ошибки)
+	 */
+	public static File getFolder(Class<?> c) { //получить папку с jar
+		if (c == null) return null;
+		return new File(getFolderPath(c));
+	}
+	
+	/**
+	 * получить путь к папке с jar
+	 * @param c класс, от которого берется путь
+	 * @return абсолютный путь к папке с jar
+	 */
+	public static String getFolderPath(Class<?> c) { //путь к папке с jar
+		if (c == null) return null;
+		try {
+			String path = new File(c.getProtectionDomain().getCodeSource().getLocation().getPath()).getAbsolutePath();
+			return path.substring(0, path.lastIndexOf(File.separator));
+		} catch(Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+	
+	/**
+	 * сохранить поток в файл
+	 * @param stream поток из файла (например, запакованного в jar)
+	 * @param file файл, куда сохранять
+	 * @return true если операция удалась; false если нет
+	 */
+	public static boolean saveFile(InputStream stream, File file) { //сохранить поток в файл
+		if (stream == null | file == null) return false;
+		try {
+			FileOutputStream fos = new FileOutputStream(file);
+			byte[] buff = new byte[65536];
+			int n;
+			while((n = stream.read(buff)) > 0){
+				fos.write(buff, 0, n);
+				fos.flush();
+			}
+			fos.close();
+			return true;
+		} catch(Exception e) {
+			e.printStackTrace();
+			return false;
+		}
 	}
 }
