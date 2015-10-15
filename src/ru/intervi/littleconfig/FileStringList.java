@@ -6,6 +6,9 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.util.ArrayList;
+
+import ru.intervi.littleconfig.utils.EasyLogger;
+
 /**
  * простой класс для чтения и записи файла на основе ArrayList<String>
  */
@@ -22,6 +25,7 @@ public class FileStringList { //класс-основа для создания 
 	 */
 	public FileStringList(File file) {read(file);}
 	
+	private EasyLogger Log = new EasyLogger();
 	private ArrayList<String> list = new ArrayList<String>();
 	
 	/**
@@ -40,7 +44,7 @@ public class FileStringList { //класс-основа для создания 
 				}
 				reader.close();
 			} catch (Exception e) {e.printStackTrace();}
-		} else System.out.println("[littleconfig] FileStringList: file " + file + " not found");
+		} else Log.info("FileStringList: file " + file + " not found");
 	}
 	
 	/**
@@ -65,7 +69,7 @@ public class FileStringList { //класс-основа для создания 
 				}
 				writer.close();
 			} catch (Exception e) {e.printStackTrace();}
-		} else System.out.println("[littleconfig] FileStringList: empty list " + file);
+		} else Log.info("FileStringList: empty list " + file);
 	}
 	
 	/**
@@ -101,7 +105,7 @@ public class FileStringList { //класс-основа для создания 
 		if (!list.isEmpty()) {
 			result = new String[list.size()];
 			for (int i = 0; i < list.size(); i++) result[i] = list.get(i);
-		} else System.out.println("[littleconfig] FileStringList: empty list");
+		} else Log.info("FileStringList: empty list");
 		return result;
 	}
 	
