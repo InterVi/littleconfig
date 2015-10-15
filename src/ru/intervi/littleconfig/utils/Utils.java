@@ -52,7 +52,8 @@ public class Utils { //разные полезные методы
 	 * @param s строка с числом
 	 * @return числовое значение из строки (0 в случае ошибки)
 	 */
-	public byte byteFromString(String s) { //байты из строки
+	public static byte byteFromString(String s) { //байты из строки
+		if (s == null) return 0;
 		try {
 			return Byte.parseByte(s);
 		} catch(Exception e) {
@@ -66,7 +67,8 @@ public class Utils { //разные полезные методы
 	 * @param s строка с числом
 	 * @return числовое значение из строки (0 в случае ошибки)
 	 */
-	public short shortFromString(String s) { //шорт из строки
+	public static short shortFromString(String s) { //шорт из строки
+		if (s == null) return 0;
 		try {
 			return Short.parseShort(s);
 		} catch(Exception e) {
@@ -80,7 +82,8 @@ public class Utils { //разные полезные методы
 	 * @param s строка с числом
 	 * @return числовое значение из строки (0 в случае ошибки)
 	 */
-	public int intFromString(String s) { //инт из строки
+	public static int intFromString(String s) { //инт из строки
+		if (s == null) return 0;
 		try {
 			return Integer.parseInt(s);
 		} catch(Exception e) {
@@ -94,7 +97,8 @@ public class Utils { //разные полезные методы
 	 * @param s строка с числом
 	 * @return числовое значение из строки (0 в случае ошибки)
 	 */
-	public long longFromString(String s) { //лонг из строки
+	public static long longFromString(String s) { //лонг из строки
+		if (s == null) return 0;
 		try {
 			return Long.parseLong(s);
 		} catch(Exception e) {
@@ -108,7 +112,8 @@ public class Utils { //разные полезные методы
 	 * @param s строка с числом
 	 * @return числовое значение из строки (0 в случае ошибки)
 	 */
-	public double doubleFromString(String s) { //доубл из строки
+	public static double doubleFromString(String s) { //доубл из строки
+		if (s == null) return 0;
 		try {
 			return Double.parseDouble(s);
 		} catch(Exception e) {
@@ -122,12 +127,103 @@ public class Utils { //разные полезные методы
 	 * @param s строка с булевой
 	 * @return булево значение из строки (false в случае ошибки)
 	 */
-	public boolean booleanFromString(String s) { //булева из строки
+	public static boolean booleanFromString(String s) { //булева из строки
+		if (s == null) return false;
 		try {
 			return Boolean.parseBoolean(s);
 		} catch(Exception e) {
 			e.printStackTrace();
 			return false;
 		}
+	}
+	
+	/**
+	 * массив byte из массива строк
+	 * @param s массив строк
+	 * @return массив byte (null в случае ошибки)
+	 */
+	public static byte[] byteFromStringArray(String s[]) { //массив байт из массива строк
+		if (s == null) return null;
+		byte result[] = null;
+		try {
+			result = new byte[s.length];
+			for (int i = 0; i < s.length; i++) result[i] = Byte.parseByte(s[i]);
+		} catch(Exception e) {e.printStackTrace();}
+		return result;
+	}
+	
+	/**
+	 * массив short из массива строк
+	 * @param s массив строк
+	 * @return массив short (null в случае ошибки)
+	 */
+	public static short[] shortFromStringArray(String s[]) { //массив шорт из массива строк
+		if (s == null) return null;
+		short result[] = null;
+		try {
+			result = new short[s.length];
+			for (int i = 0; i < s.length; i++) result[i] = Short.parseShort(s[i]);
+		} catch(Exception e) {e.printStackTrace();}
+		return result;
+	}
+	
+	/**
+	 * массив int из массива строк
+	 * @param s массив строк
+	 * @return массив int (null в случае ошибки)
+	 */
+	public static int[] intFromStringArray(String s[]) { //массив инт из массива строк
+		if (s == null) return null;
+		int result[] = null;
+		try {
+			result = new int[s.length];
+			for (int i = 0; i < s.length; i++) result[i] = Integer.parseInt(s[i]);
+		} catch(Exception e) {e.printStackTrace();}
+		return result;
+	}
+	
+	/**
+	 * массив long из массива строк
+	 * @param s массив строк
+	 * @return массив long (null в случае ошибки)
+	 */
+	public static long[] longFromStringArray(String s[]) { //массив лонг из массива строк
+		if (s == null) return null;
+		long result[] = null;
+		try {
+			result = new long[s.length];
+			for (int i = 0; i < s.length; i++) result[i] = Long.parseLong(s[i]);
+		} catch(Exception e) {e.printStackTrace();}
+		return result;
+	}
+	
+	/**
+	 * массив double из массива строк
+	 * @param s массив строк
+	 * @return массив double (null в случае ошибки)
+	 */
+	public static double[] doubleFromStringArray(String s[]) { //массив доубл из массива строк
+		if (s == null) return null;
+		double result[] = null;
+		try {
+			result = new double[s.length];
+			for (int i = 0; i < s.length; i++) result[i] = Double.parseDouble(s[i]);
+		} catch(Exception e) {e.printStackTrace();}
+		return result;
+	}
+	
+	/**
+	 * массив boolean из массива строк
+	 * @param s массив строк
+	 * @return массив boolean (null в случае ошибки)
+	 */
+	public static boolean[] booleanFromStringArray(String s[]) { //массив булева из массива строк
+		if (s == null) return null;
+		boolean result[] = null;
+		try {
+			result = new boolean[s.length];
+			for (int i = 0; i < s.length; i++) result[i] = Boolean.parseBoolean(s[i]);
+		} catch(Exception e) {e.printStackTrace();}
+		return result;
 	}
 }

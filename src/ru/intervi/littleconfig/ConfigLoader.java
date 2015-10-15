@@ -49,24 +49,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	}
 	
 	/**
-	 * <p>прочитать конфиг</p>
-	 * <p>
-	 * <b>Пример конфига:</b><br/>
-	 * key1: value<br/>
-	 *   key2:"value"<br/>
-	 * #comment<br/>
-	 * array1: [value 1, value 2] #comment<br/>
-	 * array2:["value 1","value 2"]<br/>
-	 * array3:<br/>
-	 * - value 1<br/>
-	 * - value 2<br/>
-	 * array4:<br/>
-	 * &nbsp;&nbsp;- "value 1"<br/>
-	 * - value 2<br/>
-	 * section:<br/>
-	 * &nbsp;&nbsp;key1: value<br/>
-	 * &nbsp;&nbsp;array1: [value 1, value 2]
-	 * </p>
+	 * прочитать конфиг
 	 * @param f путь к конфигу
 	 */
 	public void load(String f) { //загрузка конфина
