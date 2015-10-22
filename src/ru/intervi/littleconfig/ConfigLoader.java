@@ -1,11 +1,8 @@
 package ru.intervi.littleconfig;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Iterator;
 
 import ru.intervi.littleconfig.utils.Utils;
 import ru.intervi.littleconfig.utils.EasyLogger;
@@ -29,7 +26,10 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	 */
 	public ConfigLoader(File file) {load(file);}
 	
-	private EasyLogger Log = new EasyLogger();
+	/**
+	 * используемый логгер для вывода сообщений
+	 */
+	public EasyLogger Log = new EasyLogger();
 	
 	private boolean get = false;
 	private String[] file;
@@ -45,7 +45,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		/**
 		 * удалась ли загрузка
 		 */
-		public boolean load = false;
+		public boolean load;
 	}
 	
 	/**
@@ -53,9 +53,12 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	 * @param f путь к конфигу
 	 */
 	public void load(String f) { //загрузка конфина
-		LoaderResult result = new LoaderResult();
-		result = getList(f);
-		if (result.load == true) {
+		if (f == null) {
+			Log.info("ConfigLoader load(String f): null path");
+			return;
+		}
+		LoaderResult result = getList(f);
+		if (result.load) {
 			file = result.list;
 			get = true;
 		}
@@ -66,6 +69,10 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	 * @param f объект File конфига для чтения
 	 */
 	public void load(File f) { //загрузка конфига
+		if (f == null) {
+			Log.info("ConfigLoader load(File f): null File");
+			return;
+		}
 		load(f.getAbsolutePath());
 	}
 	
@@ -73,7 +80,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	 * фейковая загрузка данных
 	 * @param value массив строк, в котором представлен конфиг
 	 */
-	public void fakeload(String[] value) { //фейковая загрузка (установка значения из массива)
+	public void fakeLoad(String[] value) { //фейковая загрузка (установка значения из массива)
 		file = value;
 		get = true;
 	}
@@ -84,79 +91,282 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	 * @return результат в виде LoaderResult
 	 */
 	public LoaderResult getList(String f) { //получаем текстовый файл массивом, очищенный от комментов
-		String[] result;
-		LoaderResult res = new LoaderResult();
-		try {
-			BufferedReader text = new BufferedReader(new FileReader(f));
-			try { //узнаем кол-во строк, инициализируем и заполняем массив
-				int l = 0;
-				ArrayList<String> list = new ArrayList<String>();
-				while(text.ready()) {
-					String line = text.readLine();
-					if (line != null) {
-						if (line.trim().indexOf('#') != 0 && Utils.trim(line).length() > 0) { //если строка - комментарий или пустая, не добавляем ее
-							list.add(line);
+		LoaderResult result = new LoaderResult();
+		FileStringList list = new FileStringList(f);
+		if (list.isLoad()) {
+			result.list = list.getStringArray();
+			result.load = true;
+		}
+		return result;
+	}
+	
+	/**
+	 * класс с результатами проверки строки и очистки ее от комментария
+	 */
+	public class ClearResult { //класс с результатом очистки строки от коммента
+		/**
+		 * была ли произведена очистка от комментария
+		 */
+		public boolean clear;
+		/**
+		 * занимает ли комментарий всю строку
+		 */
+		public boolean fullstr;
+		/**
+		 * является ли строка бракованной (не переменная)
+		 */
+		public boolean broken;
+		/**
+		 * является ли строка пустой (1 и менее символов)
+		 */
+		public boolean empty;
+		/**
+		 * оригинальная строка (не измененная)
+		 */
+		public String origin;
+		/**
+		 * строка, очищенная от комментария (заполняется даже если комментария не было)
+		 */
+		public String cleaned;
+		/**
+		 * комментарий
+		 */
+		public String com;
+		/**
+		 * содержание переменной
+		 */
+		public String content;
+		/**
+		 * имя переменной
+		 */
+		public String name;
+		/**
+		 * индекс первой кавычки (значение по умолчанию: -1)
+		 */
+		public int firstquote = -1;
+		/**
+		 * индекс второй кавычки (значение по умолчанию: -1)
+		 */
+		public int lastquote = -1;
+		/**
+		 * индекс первой квадратной скобки (значение по умолчанию: -1)
+		 */
+		public int firstsq = -1;
+		/**
+		 * индекс второй квадратной скобки (значение по умолчанию: -1)
+		 */
+		public int lastsq = -1;
+		/**
+		 * индекс первого дефиса в строке (значение по умолчанию: -1)
+		 */
+		public int hypindex = -1;
+		/**
+		 * индекс первого двоеточия в строке (значение по умолчанию: -1)
+		 */
+		public int colon = -1;
+		/**
+		 * индекс комментария (символа #) (значение по умолчанию: -1)
+		 */
+		public int comindex = -1;
+		/**
+		 * количество пробелов в строке
+		 */
+		public int probels;
+	}
+	
+	private ClearResult clearStr(String s) { //очистка строки от комментов
+		if (s == null) return null;
+		ClearResult result = new ClearResult();
+		result.origin = s;
+		if (s.trim().toCharArray()[0] == '#') { //если коммент во всю строку
+			result.comindex = 0;
+			result.com = s.substring(1, s.length());
+			result.fullstr = true;
+			return result;
+		}
+		if (Utils.trim(s).length() <= 1) { //нормальная строка не может быть в 1 символ
+			result.broken = true;
+			result.empty = true;
+			return result;
+		}
+		
+		char c[] = s.toCharArray();
+		int q = -1, q2 = -1, q3 = -1, q4 = -1, d = -1, ci = -1, p = 0, sq = -1, sq2 = -1, hyp = -1;
+		for (int i = 0; i < c.length; i++) {
+			if (c[i] == ' ') { //пропуск обработки пробелов
+				p++;
+				continue;
+			}
+			if (d == -1 | hyp == -1) { //нахождение двоеточия
+				if (c[i] == ':') {
+					if (i == 0 | i == (p+1)) { //если перед двоеточием нет символов - опция бракованная
+						result.broken = true;
+					} else d = i;
+					continue;
+				} else if (c[i] == '-') { //нахождения дефиса (для корректной очистки элементов массивов)
+					hyp = i;
+					result.broken = true;
+					continue;
+				} else result.broken = true; //если первый символ не двоеточие и не дефис, то строка бракованная
+			} else if (d > -1 | hyp > -1) {
+				if (q == -1 & ci == -1) {
+					if (c[i] == '"') { //поиск кавычки
+						if ((i-d) > 1) {
+							boolean ok = true; //только если кавычка - первый символ после имени опции
+							for (int n = (d+1); n < i; n++) {
+								if (c[n] != ' ') {
+									ok = false;
+									break;
+								}
+							}
+							if (ok) q = i;
+						} else q = i;
+						continue;
+					}
+				} else { //поиск второй кавычки
+					if (q2 == -1) {
+						if (c[i] == '"') {
+							q2 = i;
+							continue;
 						}
 					}
 				}
-				text.close();
-				if (l > 0) { //проверка на нулевую длинну
-					result = new String[l];
-					for (int i = 0; i < l; i++) result[i] = list.get(i); //заполнение массива
-				} else {result = null; Log.info("emty config");}
-			} catch(IOException e) {result = null; e.printStackTrace();}
-		} catch(FileNotFoundException e) {result = null; e.printStackTrace();}
-		catch(Exception e) {result = null; e.printStackTrace();}
-		if (result != null) { //сохранение результата
-			result = clear(result);
-			res.list = new String[result.length];
-			res.list = result;
-			res.load = true;
+				if (q3 == -1 & q == -1 && ci == -1) {
+					if (c[i] == '\'') { //поиск кавычки другого вида
+						if ((i-d) > 1) {
+							boolean ok = true; //та же проверка
+							for (int n = (d+1); n < i; n++) {
+								if (c[n] != ' ') {
+									ok = false;
+									break;
+								}
+							}
+							if (ok) q3 = i;
+						} else q3 = i;
+						continue;
+					}
+				} else if (q3 > -1) { //поиск второй кавычки
+					if (q4 == -1) {
+						if (c[i] == '\'') {
+							q4 = i;
+							continue;
+						}
+					}
+				}
+				//поиск квадратной скобки (для корректной обработки массивов, которые не могут содержать только "]" и те же кавычки)
+				if (sq == -1) {
+					if (c[i] == '[') {
+						if ((i-d) > 1) {
+							boolean ok = true; //только если скобка - первый символ после имени опции
+							for (int n = (d+1); n < i; n++) {
+								if (c[n] != ' ') ok = false;
+							}
+							if (ok) sq = i;
+						} else sq = i;
+						continue;
+					}
+				} else { //поиск второй скобки
+					if (sq2 == -1) {
+						if (c[i] == ']') {
+							sq2 = i;
+							continue;
+						}
+					}
+				}
+			}
+			if (ci == -1 && c[i] == '#') { //поиск коммента
+				//исключение символа, находящегося в кавычках
+				if (q == -1 & q3 == -1 & sq == -1 || q > -1 & q2 > -1 || q3 > -1 & q4 > -1 || sq > -1 & sq2 > -1) {
+					//если есть коммент, но нет опции, при этом символ коммента не первый в строке (не считая пробелы), то строка бракованная
+					if (d == -1) {
+						result.fullstr = true;
+						result.broken = true;
+					}
+					ci = i;
+				}
+			}
 		}
-		return res;
+		
+		//заполнение результатов
+		result.probels = p;
+		result.firstsq = sq;
+		result.lastsq = sq2;
+		result.hypindex = hyp;
+		result.colon = d;
+		if (q > -1 & q2 > -1) { //если найдены кавычки первого типа
+			result.firstquote = q;
+			result.lastquote = q2;
+			if ((q2-q) <= 1) result.broken = true; //если между кавычек пусто - строка бракованная
+			else
+			result.content = s.substring((q+1), q2);
+		} else if (q3 > -1 & q4 > -1) { //если найдены кавычки второго типа
+			result.firstquote = q3;
+			result.lastquote = q4;
+			if ((q4-q3) <= 1) result.broken = true;
+			else
+			result.content = s.substring((q3+1), q4);
+		}
+		if (d > -1) {
+			//если кавычек нет - вырезаем контент между двоеточием и концом строки (или комментом)
+			int ch = s.substring(d, s.length()).trim().length();
+			if (q == -1 & q3 == -1 && ch > 0) {
+				if (ci == -1) result.content = s.substring((d+1), s.length()).trim();
+				else result.content = s.substring((d+1), s.lastIndexOf(ci)).trim();
+			} else if (ch <= 0) result.broken = true; //если строка кончается двоеточием - она бракованная
+			result.name = s.substring(0, d).trim();
+		} else {
+			result.broken = true; //если нет двоеточия - строка бракованная
+			if (hyp > -1) {
+				//если кавычек нет - вырезаем контент между тире и концом строки (или комментом)
+				int ch = s.substring(hyp, s.length()).trim().length();
+				if (q == -1 & q3 == -1 && ch > 0) {
+					if (ci == -1) result.content = s.substring((hyp+1), s.length()).trim();
+					else result.content = s.substring((hyp+1), s.lastIndexOf(ci)).trim();
+				} else if (ch <= 0) result.broken = true; //если строка кончается тире - она бракованная
+			}
+		}
+		if (ci > -1) { // заполнение результатов, если в строке есть коммент
+			result.comindex = ci;
+			result.cleaned = s.substring(0, ci).trim();
+			result.com = s.substring((ci+1), s.length());
+			result.clear = true;
+		} else result.cleaned = s;
+
+		
+		return result;
 	}
 	
-	private String[] clear(String[] s) { //чистка от #комментов
-		if (s == null) {Log.info("ConfigLoader clear: String is null"); return null;}
-		for(int i = 0; i < s.length; i++) {
-			if (s[i] != null) {
-			while (s[i].indexOf('#') > -1) {
-				String ch = s[i];
-				int check = ch.indexOf('"'); //исключаем данные из параметра
-				int check2 = ch.lastIndexOf('"');
-				if (check > -1 & check2 > -1 & check2 > check) {
-					ch = Utils.remChars(s[i], check, check2);
-				}
-				if (ch.indexOf('#') > -1) { //если коммент все же есть, удаляем его
-					ch = s[i];
-					s[i] = Utils.remChars(s[i], s[i].indexOf('#'), s[i].length());
-				}
-				if (ch.equals(s[i])) s[i] = " "; //на случай ошибок обрезки, в основном когда коммент на всю строку
-			}}
+	/**
+	 * очистить весь конфиг от комментариев
+	 */
+	public void clearComments() { //очистить конфиг от комментариев
+		if (!get | file == null) return;
+		ArrayList<String> list = new ArrayList<String>();
+		for (int i = 0; i < file.length; i++) {
+			if (file[i] != null) {
+				ClearResult r = clearStr(file[i]);
+				if (r.fullstr) continue;
+				if (r.cleaned != null) list.add(r.cleaned);
+			}
 		}
-		return s;
+		file = new String[list.size()];
+		for (int i = 0; i < file.length; i++) file[i] = list.get(i);
 	}
 	
 	private String getString(int index) { //получение переменной типа String по индексу
 		String result = null;
-		if (index < 0) {Log.info("ConfigLoader getString: failed, index < 0"); return result;}
-		if (get == true && file != null) { //поиск и получение переменной из массива
-			for (int i = 0; i < file.length; i++) {
-				if (file[i] != null) {
-					result = file[index];
-			}}
-		} else if (get == false) Log.info("ConfigLoader getString(index): " + index + "(index) file not loaded");
+		if (index < 0) {Log.info("ConfigLoader getString(index): failed, index < 0"); return result;}
+		if (index >= file.length) {Log.info("ConfigLoader getString(index): failed, index >= file.length"); return result;}
+		if (get & file != null) { //поиск и получение переменной из массива
+			if (isSet(index)) {
+				ClearResult r = clearStr(file[index]);
+				if (!r.broken & !r.fullstr) {
+					if (r.content != null) result = r.content;
+					else Log.info("ConfigLoader getString(index) " + index + "(index) null content");
+				} else Log.info("ConfigLoader getString(index): " + index + "(index) broken line");
+			} else Log.info("ConfigLoader getString(index): " + index + "(index) no data");
+		} else if (!get) Log.info("ConfigLoader getString(index): " + index + "(index) file not loaded");
 		else if (file == null) Log.info("ConfigLoader getString(index): " + index + "(index) array file = null");
-		if (result != null && result.indexOf(":") > -1) { //обрезка до двоеточия
-			result = Utils.remChars(result, 0, result.indexOf(":")+1).trim();
-			//обрезка от скобки до скобки, если они есть
-			int ch = result.indexOf('"');
-			int ch2 = result.lastIndexOf('"');
-			if (ch > -1 & ch2 > -1 & ch2 > ch) {
-				result = Utils.remChars(result, 0, ch+1);
-				result = Utils.remChars(result, ch2-1, result.length());
-			}
-		} else if (result != null && result.indexOf(":") == -1) {Log.info("ConfigLoader getString(index): " + index + "(index) not ':', ride error"); result = null;}
 		if (result == null) Log.info("ConfigLoader getString(index): " + index + "(index) = null");
 		return result;
 	}
@@ -169,28 +379,43 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	public String getString(String name) { //получение переменной типа String по названию
 		String result = null;
 		if (name == null) {Log.info("ConfigLoader getString: null name"); return result;}
-		if (get == true && file != null) {
+		if (get & file != null) {
 			result = getString(getIndexNoSection(name));
 		} else Log.info("ConfigLoader getString(name): " + name + " error (file not load or null array");
 		if (result == null) Log.info("ConfigLoader getString(name): " + name + " error, var not found");
 		return result;
 	}
 	
+	private byte getByte(int index) { //получение переменной типа byte по индесу
+		return Utils.byteFromString(getString(index));
+	}
+	
+	/**
+	 * получить значение переменной в виде byte
+	 * @param name имя переменной
+	 * @return значение переменной в виде byte (0, если переменная не найдена)
+	 */
+	public byte getByte(String name) { //получение переменной типа byte по названию
+		if (name == null) {Log.info("ConfigLoader getInt: null name"); return 0;}
+		return getByte(getIndexNoSection(name));
+	}
+	
+	private short getShort(int index) { //получение переменной типа short по индексу
+		return Utils.shortFromString(getString(index));
+	}
+	
+	/**
+	 * получить значение переменной в виде short
+	 * @param name имя переменной
+	 * @return значение переменной в виде short (0, если переменная не найдена)
+	 */
+	public short getShort(String name) { //получение переменной типа short по названию
+		if (name == null) {Log.info("ConfigLoader getInt: null name"); return 0;}
+		return getShort(getIndexNoSection(name));
+	}
+	
 	private int getInt(int index) { //получение переменной типа int по индексу
-		String str = getString(index);
-		String name = getName(index);
-		if (str != null) str = Utils.trim(str).toLowerCase(); else Log.info("ConfigLoader getInt: " + name + " str = null");
-		int num = 0;
-		String error = null;
-		try {
-			if (str != null) {
-				num = Integer.parseInt(str);
-			} else {
-				error = "ConfigLoader getInt: " + name + " null String";
-			}
-		} catch(NumberFormatException e) {error = "ConfigLoader getInt: " + name + " NumberFormatException: " + e.getMessage();}
-		if (error != null) Log.info(error);
-		return num;
+		return Utils.intFromString(getString(index));
 	}
 	
 	/**
@@ -199,23 +424,12 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	 * @return значение переменной в виде int (0, если переменная не найдена)
 	 */
 	public int getInt(String name) { //получение переменной типа int по названию
-		if (name == null) {Log.info("ConfigLoader getInt: null name"); return -1;}
+		if (name == null) {Log.info("ConfigLoader getInt: null name"); return 0;}
 		return getInt(getIndexNoSection(name));
 	}
 	
 	private long getLong(int index) { //получение переменной типа long по индексу
-		String name = getName(index);
-		String str = getString(index);
-		if (str != null) str = Utils.trim(str).toLowerCase(); else Log.info("ConfigLoader getLong: " + name + " str = null");
-		long num = 0;
-		String error = null;
-		try {
-			if (str != null) {
-				num = Long.parseLong(str);
-			} else error = "ConfigLoader getLong: " + name + " null String";
-		} catch(NumberFormatException e) {error = "ConfigLoader getLong: " + name + " NumberFormatException: " + e.getMessage();}
-		if (error != null) Log.info(error);
-		return num;
+		return Utils.longFromString(getString(index));
 	}
 	
 	/**
@@ -229,18 +443,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	}
 	
 	private double getDouble(int index) { //получение переменной типа double по индексу
-		String str = getString(index);
-		String name = getName(index);
-		if (str != null) str = Utils.trim(str).toLowerCase(); else Log.info("ConfigLoader getDouble: " + name + " str = null");
-		double num = 0;
-		String error = null;
-		try {
-			if (str != null) {
-				num = Double.parseDouble(str);
-			} else error = "ConfigLoader getDouble: " + name + " null String";
-		} catch(NumberFormatException e) {error = "ConfigLoader getDouble: " + name + " NumberFormatException: " + e.getMessage();}
-		if (error != null) Log.info(error);
-		return num;
+		return Utils.doubleFromString(getString(index));
 	}
 	
 	/**
@@ -254,15 +457,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	}
 	
 	private boolean getBoolean(int index) { //получение переменной типа boolean по индексу
-		String str = getString(index);
-		String name = getName(index);
-		if (str != null) str = Utils.trim(str).toLowerCase(); else Log.info("ConfigLoader getBoolean: " + name + " str = null");
-		boolean res = false;
-		if (str != null && str.equals("true") | str.equals("false")) {
-			res = Boolean.parseBoolean(str);
-		} else if(str == null) Log.info("ConfigLoader getBoolean: " + name  + " null String"); else
-			Log.info("ConfigLoader getBoolean: " + name + " var not boolean");
-		return res;
+		return Utils.booleanFromString(getString(index));
 	}
 	
 	/**
@@ -280,72 +475,122 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	 * @return конфиг в виде массива строк
 	 */
 	public String[] getAll() { //получение всего конфига массивом строк
-		if (get == true && file != null) return file; else {
+		if (get & file != null) return file; else {
 			Log.info("ConfigLoader getAll: failed, returning null");
 			return null;
 		}
 	}
 	
 	private String[] getStringArray(int index) { //получение переменной типа массив строк (по индексу)
+		if (index < 0) {Log.info("ConfigLoader getStringArray(index): failed, index < 0"); return null;}
+		if (index >= file.length) {Log.info("ConfigLoader getStringArray(index): failed, index >= file.length"); return null;}
 		String[] result = null;
-		if (index < 0) {Log.info("ConfigLoader getStringArray: failed, index < 0"); return result;}
-		int pos = -1;
-		if (get == true && file != null) {
-			if (file[index] != null) pos = index;
-		} else Log.info("ConfigLoader getStringArray(index): get " + index + " failed (config not loaded or file = null)");
-		if (pos != -1) { //если переменная найдена, то начинаем проверку и последующее извелечение данных
-			IsArray is = new IsArray();
-			is = isArray(file[pos], pos); //проверка, является ли переменная массивом и если да, то каким именно
-			if(is.IsArray) {
-				if(is.isSkobka) { //получение массива, заключенного в квадратные скобки
-					String arr = file[pos];
-					boolean empty; //проверка пустой ли массив (просто [])
-					if ((arr.lastIndexOf("]") - (arr.indexOf("["))) > 2) empty = false; else empty = true;
-					arr = Utils.remChars(arr, 0, arr.indexOf("[")+1);
-					arr = Utils.remChars(arr, arr.lastIndexOf("]"), arr.length());
-					if (Utils.trim(arr).length() > 2 && empty == false) empty = false; else empty = true; //еще проверка
-					if (empty == false) {
-					String[] result2 = null;
-					result2 = arr.split(",");
-					int resleng = 0;
-					for(int i = 0; i < result2.length; i++) {
-						if (result2[i] != null) resleng++;
+		IsArray a = isArray(index);
+		if (a.array & !a.empty) {
+			if (a.skobka) { //парсинг данных из однострочного массива
+				String str = a.clear.content.substring(1, (a.clear.content.length()-1));
+				int ch = str.indexOf('"');
+				int ch2 = str.indexOf('\'');
+				if (ch == -1 & ch2 == -1) { //если кавычки не применялись
+					result = str.split(",");
+					for (int i = 0; i < result.length; i++) {
+						if (result[i] != null) result[i] = result[i].trim();
 					}
-					result = new String[resleng];
-					for(int i = 0; i < resleng; i++) {
-						if (result2[i] != null) {
-							result[i] = result2[i].trim();
-							//обрезка от скобки до скобки, если они есть
-							int ch = result[i].indexOf('"');
-							int ch2 = result[i].lastIndexOf('"');
-							if (ch > -1 & ch2 > -1 & ch2 > ch) {
-								result[i] = Utils.remChars(result[i], 0, ch+1);
-								result[i] = Utils.remChars(result[i], ch2-1, result[i].length());
+				} else { //если применялись
+					//сразу отсекаем бракованный массив
+					if (ch > -1 & ch == str.lastIndexOf('"') || ch2 > -1 & ch2 == str.lastIndexOf('\'')) {
+						Log.info("ConfigLoader getStringArray(index): " + index + "(index), broken array");
+						return null;
+					}
+					ArrayList<int[]> q = new ArrayList<int[]>();
+					char c[] = str.toCharArray();
+					int f = -1;
+					int add[] = null;
+					for (int i = 0; i < c.length; i++) { //поиск и сохранение индексов кавычек
+						if (f == -1) { //поиск первой кавычки
+							if (c[i] == '"') f = i; else if (c[i] == '\'') f = i;
+						} else { //поиск второй кавычки
+							if (c[i] == '"') {
+								if (add == null) { //сохранение результата
+									add = new int[3];
+									add[0] = f; add[1] = i;
+									if ((i+1) == c.length) add[2] = (i+1); //если это конец строки
+									f = -1;
+									add = null;
+								} else { //поиск запятой
+									if (c[i] == ',') {
+										for (int n = (add[1]+1); n < i; n++) {
+											if (c[n] != ' ') { //если вместо запятой другой символ - массив бракованный
+												Log.info("ConfigLoader getStringArray(index): " + index + "(index), broken array");
+												return null;
+											}
+										}
+										add[2] = i;
+										q.add(add);
+										f = -1;
+										add = null;
+									}
+								}
+							} else if (c[i] == '\'') { //тот же алгоритм
+								if (add == null) {
+									add = new int[3];
+									add[0] = f; add[1] = i;
+									if ((i+1) == c.length) add[2] = (i+1);
+									f = -1;
+									add = null;
+								} else {
+									if (c[i] == ',') {
+										for (int n = (add[1]+1); n < i; n++) {
+											if (c[n] != ' ') {
+												Log.info("ConfigLoader getStringArray(index): " + index + "(index), broken array");
+												return null;
+											}
+										}
+										add[2] = i;
+										q.add(add);
+										f = -1;
+										add = null;
+									}
+								}
 							}
 						}
 					}
-					} else result = new String[0]; //если массив пустой (просто [])
-				} else { //получение массива, перечисленного через тире
-					int leng = 0;
-					int pp = pos+1;
-					while(isArray(file[pp])) {leng++; pp++; if (pp >= file.length) break;}
-					result = new String[leng];
-					pp = pos+1;
-					for(int i = 0; i < leng; i++) {
-						result[i] = Utils.remChars(file[pp], 0, file[pp].indexOf("-")+1).trim();
-						//обрезка от скобки до скобки, если они есть
-						int ch = result[i].indexOf('"');
-						int ch2 = result[i].lastIndexOf('"');
-						if (ch > -1 & ch2 > -1 & ch2 > ch) {
-							result[i] = Utils.remChars(result[i], 0, ch+1);
-							result[i] = Utils.remChars(result[i], ch2-1, result[i].length());
-						}
-						pp++;
+					ArrayList<String> list = new ArrayList<String>();
+					Iterator<int[]> iter = q.iterator();
+					while(iter.hasNext()) { //первыми добавляются строки, заключенные в кавычки
+						int ind[] = iter.next();
+						list.add(str.substring((ind[0]+1), ind[1]));
 					}
+					iter = q.iterator();
+					while(iter.hasNext()) { //удаление добавленных элементов из строки
+						int ind[] = iter.next();
+						str = Utils.remChars(str, ind[0], ind[3]);
+					}
+					String split[] = str.split(",");
+					if (split != null && split.length > 0) { //добавление оставшихся элементов без кавычек
+						for (int i = 0; i < split.length; i++) list.add(split[i].trim());
+					}
+					result = new String[list.size()]; //сохранение результатов
+					for (int i = 0; i < result.length; i++) result[i] = list.get(i);
 				}
-			} else Log.info("ConfigLoader getStringArray(index): var " + index + " not array");
-			if (is.isCheck == false) Log.info("ConfigLoader getStringArray(index): " + index + " failed check is a array");
-		} else Log.info("ConfigLoader getStringArray(index): var " + index + " not found");
+			} else { //парсинг данных из многострочного массива
+				ArrayList<String> list = new ArrayList<String>();
+				int ind = index+1;
+				ClearResult r;
+				do {
+					r = clearStr(file[ind]);
+					if (r.empty | r.hypindex == -1) continue; //пропускаем не нужное
+					String add = r.cleaned; //получаем готовый элемент
+					if (add != null) list.add(add);
+					if ((ind+1) == file.length) break;
+					ind++;
+				} while(isArray(file[ind]) || r.empty | r.fullstr);
+				result = new String[list.size()];
+				for (int i = 0; i < result.length; i++) result[i] = list.get(i);
+			}
+		} else if (!a.array) Log.info("ConfigLoader getStringArray(index): " + index + "(index), not array");
+		
+		if (result != null && result.length == 0) return null;
 		return result;
 	}
 	
@@ -357,7 +602,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	public String[] getStringArray(String name) { //получение переменной типа массив строк (по названию)
 		String[] result = null;
 		if (name == null) {Log.info("ConfigLoader getStringArray(name): null name"); return result;}
-		if (get == true && file != null) {
+		if (get & file != null) {
 			result = getStringArray(getIndexNoSection(name));
 		} else Log.info("ConfigLoader getStringArray(name): get " + name + " failed (config not loaded or file = null)");
 		if (result == null) Log.info("ConfigLoader getStringArray(name): " + name + " error, var not found");
@@ -369,67 +614,106 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	 */
 	public class IsArray { //класс для возвращение результата проверки переменной на массив
 		/**
-		 * является ли переменная массивом
+		 * является ли переменная заполненным массивом
 		 */
-		public boolean IsArray = false; //массив ли эта переменная
+		public boolean array; //массив ли эта переменная
+		/**
+		 * пустой ли массив
+		 */
+		public boolean empty;
 		/**
 		 * содержатся ли значения в квадратных скобках
 		 */
-		public boolean isSkobka = false; //данные в квадратных скобках или через тире
+		public boolean skobka; //данные в квадратных скобках или через тире
 		/**
 		 * удалось ли осуществаить проверку
 		 */
-		public boolean isCheck = false; //удалась ли проверка
+		public boolean check; //удалась ли проверка
+		/**
+		 * результат очистки строки
+		 */
+		public ClearResult clear;
 	}
 	
-	private IsArray isArray(String s, int p) { //проверка переменной на то, является ли она массивом
-		boolean result = false;
-		IsArray res = new IsArray();
-		if (s == null) return res;
-		int ps1 = s.indexOf("[");
-		int ps2 = s.lastIndexOf("]");
-		if (ps1 > -1 & ps2 > -1 & ps2 > ps1) { //проверка, заключены ли данные массива в квадратные скобки
-			result = true;
-			res.isSkobka = true;
-			res.isCheck = true;
-		}
-		if (result == false && get == true && file != null) { //если нет, то проверка, не перечислены ли они через тире
-			if ((p+1) < file.length) {
-				res.isCheck = true;
-				result = isArray(file[p+1]);
-		}} else if (result != false && get == false | file == null) Log.info("ConfigLoader IsArray: " + s + " failed check, not loaded config");
-		res.IsArray = result;
-		return res;
+	private IsArray isArray(int index) { //проверка переменной на то, является ли она массивом
+		IsArray result = new IsArray();
+		if (index < 0) {Log.info("ConfigLoader isArray(index): failed, index < 0"); return result;}
+		if (index >= file.length) {Log.info("ConfigLoader isArray(index): failed, index >= file.length"); return result;}
+		if (get & file != null) {
+			ClearResult r = clearStr(file[index]);
+			result.clear = r;
+			if (r.cleaned != null) {
+				if (r.content != null) { //если есть содержимое в опции - проверяем
+					char ch[] = Utils.trim(r.content).toCharArray();
+					if (ch != null) { //мало ли...
+						if (ch.length > 0 && ch[0] == '[' & ch[(ch.length-1)] == ']') { //если строка закрыта в квадратные скобки
+							if (ch.length == 2) { //между скобок пусто
+								result.skobka = true;
+								result.empty = true;
+								result.check = true;
+							} else { //не пусто - значит массив не пустой
+								result.skobka = true;
+								result.array = true;
+								result.check = true;
+							}
+						} else { //содержимое есть, но не в скобках - значит не массив (или 0 длинна)
+							result.empty = true;
+							result.check = true;
+						}
+					}
+				} else { //нет контента - проверяем следующую строку на тире
+					if ((index+1) < file.length) {
+						if (isArray(file[(index+1)])) {
+							result.array = true;
+							result.check = true;
+						} else {
+							result.empty = true;
+							result.check = true;
+						}
+					}
+				}
+			}
+		} else if (!get) Log.info("ConfigLoader isArray(index): " + index + "(index) file not loaded");
+		else if (file == null) Log.info("ConfigLoader isArray(index): " + index + "(index) array file = null");
+		return result;
 	}
 	
 	private boolean isArray(String s) { //проверка, является ли строка компонентом массива (т.е. начинается с тире)
-		boolean result = false;
-		if (s == null) return result;
-		String check = s;
-		boolean check2 = false; //является ли тире первым символом в строке
-		int tir = check.indexOf("-");
-		if (tir > -1) { //проверка, является ли тире первым символом в строке (в таком случае это - ячейка массива)
-			String check3 = Utils.trim(check).substring(0, 1);
-			if (check3.equals("-")) check2 = true; else check2 = false;
-		}
-		result = check2;
-		return result;
+		if (s == null) return false;
+		if (s.trim().length() <= 1) return false;
+		if (Utils.trim(s).substring(0, 1).equals("-")) return true; else return false;
+	}
+	
+	private byte[] getByteArray(int index) { //получение массива типа byte по индексу
+		return Utils.byteFromStringArray(getStringArray(index));
+	}
+	
+	/**
+	 * получить значение переменной в виде массива byte
+	 * @param name имя переменной
+	 * @return значение переменной в виде массива byte (null, если переменная не найдена)
+	 */
+	public byte[] getByteArray(String name) { //получение массива типа byte по названию
+		if (name == null) {Log.info("ConfigLoader getByteArray: null name"); return null;}
+		return getByteArray(getIndexNoSection(name));
+	}
+	
+	private short[] getShortArray(int index) { //получение массива типа short по индексу
+		return Utils.shortFromStringArray(getStringArray(index));
+	}
+	
+	/**
+	 * получить значение переменной в виде массива short
+	 * @param name имя переменной
+	 * @return значение переменной в виде массива short (null, если переменная не найдена)
+	 */
+	public short[] getShortArray(String name) { //получение массива типа short по названию
+		if (name == null) {Log.info("ConfigLoader getShortArray: null name"); return null;}
+		return getShortArray(getIndexNoSection(name));
 	}
 	
 	private int[] getIntArray(int index) { //получение массива типа int по индексу
-		int[] result = null;
-		String error = null;
-		String[] text = getStringArray(index);
-		String name = getName(index);
-		if (text != null) {
-		result = new int[text.length];
-		for(int i = 0; i < text.length; i++) {
-			try {
-				result[i] = Integer.parseInt(text[i]);
-			} catch(NumberFormatException e) {error = "ConfigLoader getIntArray: " + name + " index of " + i + " NumberFormatException: " + e.getMessage();}
-		}} else Log.info("ConfigLoader getIntArray: " + name + " null text (StringArray)");
-		if (error != null) Log.info(error);
-		return result;
+		return Utils.intFromStringArray(getStringArray(index));
 	}
 	
 	/**
@@ -438,24 +722,12 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	 * @return значение переменной в виде массива int (null, если переменная не найдена)
 	 */
 	public int[] getIntArray(String name) { //получение массива типа int по названию
-		if (name == null) return null;
+		if (name == null) {Log.info("ConfigLoader getIntArray: null name"); return null;}
 		return getIntArray(getIndexNoSection(name));
 	}
 	
 	private long[] getLongArray(int index) { //получение массива типа long по индексу
-		long[] result = null;
-		String error = null;
-		String[] text = getStringArray(index);
-		String name = getName(index);
-		if (text != null) {
-		result = new long[text.length];
-		for(int i = 0; i < text.length; i++) {
-			try {
-				result[i] = Long.parseLong(text[i]);
-			} catch(NumberFormatException e) {error = "ConfigLoader getLongArray: " + name + " index of " + i + " NumberFormatException: " + e.getMessage();}
-		}} else Log.info("ConfigLoader getLongArray: " + name + " null text (StringArray)");
-		if (error != null) Log.info(error);
-		return result;
+		return Utils.longFromStringArray(getStringArray(index));
 	}
 	
 	/**
@@ -464,24 +736,12 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	 * @return значение переменной в виде массива long (null, если переменная не найдена)
 	 */
 	public long[] getLongArray(String name) { //получение массива типа long по названию
-		if (name == null) return null;
+		if (name == null) {Log.info("ConfigLoader getLongArray: null name"); return null;}
 		return getLongArray(getIndexNoSection(name));
 	}
 	
 	private double[] getDoubleArray(int index) { //получение массива типа double по индексу
-		double[] result = null;
-		String error = null;
-		String[] text = getStringArray(index);
-		String name = getName(index);
-		if (text != null) {
-		result = new double[text.length];
-		for(int i = 0; i < text.length; i++) {
-			try {
-				result[i] = Double.parseDouble(text[i]);
-			} catch(NumberFormatException e) {error = "ConfigLoader getLongArray: " + name + " index of " + i + " NumberFormatException: " + e.getMessage();}
-		}} else Log.info("ConfigLoader getDoubleArray: " + name + " null text (StringArray)");
-		if (error != null) Log.info(error);
-		return result;
+		return Utils.doubleFromStringArray(getStringArray(index));
 	}
 	
 	/**
@@ -490,24 +750,12 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	 * @return значение переменной в виде массива double (null, если не найдено)
 	 */
 	public double[] getDoubleArray(String name) { //получение массива типа double по названию
-		if (name == null) return null;
+		if (name == null) {Log.info("ConfigLoader getDoubleArray: null name"); return null;}
 		return getDoubleArray(getIndexNoSection(name));
 	}
 	
 	private boolean[] getBooleanArray(int index) { //получение массива типа boolean по индексу
-		boolean[] result = null;
-		String error = null;
-		String[] text = getStringArray(index);
-		String name = getName(index);
-		if (text != null) {
-		result = new boolean[text.length];
-		for(int i = 0; i < text.length; i++) {
-			if (text[i].equals("true") | text[i].equals("false")) {
-				result[i] = Boolean.parseBoolean(text[i]);
-			} else error = "ConfigLoader getBooleanArray: " + name + " error, var index " + i + " in array not boolean";
-		}} else Log.info("ConfigLoader getBooleanArray: " + name + " null text (StringArray)");
-		if (error != null) Log.info(error);
-		return result;
+		return Utils.booleanFromStringArray(getStringArray(index));
 	}
 	
 	/**
@@ -516,7 +764,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	 * @return значение переменной в виде массива boolean (null, если переменная не найдена)
 	 */
 	public boolean[] getBooleanArray(String name) { //получение массива типа boolean по названию
-		if (name == null) return null;
+		if (name == null) {Log.info("ConfigLoader getBooleanArray: null name"); return null;}
 		return getBooleanArray(getIndexNoSection(name));
 	}
 	
@@ -524,11 +772,12 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		boolean result = false;
 		if (index < 0) {Log.info("ConfigLoader isSet: failed, index < 0"); return result;}
 		if (index >= file.length) {Log.info("ConfigLoader isSet: failed, index > file.length"); return result;}
-		if (get == true && file != null) {
+		if (get & file != null) {
 			result = isParam(index); //является ли строка параметром
-			if (index+1 < file.length) {if (!result && isArray(file[index+1])) result = true;} //является ли она массивом
-			if (!result && index+1 < file.length) {
-				if (file[index+1].indexOf(":") > 1) result = true; //является ли она секцией (упрощенный вариант проверки)
+			if (index+1 < file.length) {if (!result & isArray(file[index+1])) result = true;} //является ли она массивом
+			if (!result & index+1 < file.length) {
+				ClearResult r = clearStr(file[index+1]);
+				if (r.name != null & r.broken & r.content == null) result = true; //является ли она секцией (упрощенный вариант проверки)
 			}
 		} else Log.info("ConfigLoader isSet(index): failed check " + index + ", config not loaded");
 		return result;
@@ -542,35 +791,19 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	public boolean isSet(String name) { //проверка, прописана ли переменная (по названию)
 		boolean result = false;
 		if (name == null) {Log.info("ConfigLoader isSet: null name"); return false;}
-		if (get == true && file != null) {
+		if (get & file != null) {
 			result = isSet(getIndexNoSection(name));
 		} else Log.info("ConfigLoader isSet(name): failed check " + name + ", config not loaded");
 		return result;
 	}
 	
 	private boolean isSetArray(int index) { //проверка, прописан ли массив (по индексу)
-		int pos = -1;
 		boolean result = false;
-		String name = getName(index);
-		if (get == true && file != null) {
-			pos = index;
-			if (pos > -1) { //если переменная найдена
-				IsArray isr = isArray(file[pos], pos);
-				result = isr.IsArray;
-				if (result && !isr.isSkobka) { //если массив через тире, то проверяем, есть ли хотя бы 1 элемент
-					result = isArray(file[pos+1]);
-					if (result) { //проверка, не пустой ли этот элемент
-						if (Utils.trim(file[pos+1]).length() > 1) result = true; else result = false;
-					}
-				}
-				if (result && isr.isSkobka) { //если массив через квадратные скобки, проверяем, есть ли там хотя бы 1 символ
-					String arr = file[pos];
-					arr = Utils.remChars(arr, 0, arr.indexOf("[")+1);
-					arr = Utils.remChars(arr, arr.lastIndexOf("]"), arr.length());
-					if (Utils.trim(arr).length() > 2) result = true; else result = false;
-				}
-			}
-		} else Log.info("ConfigLoader isSet: failed check " + name + ", config not loaded");
+		if (index < 0) {Log.info("ConfigLoader isSetArray: failed, index < 0"); return result;}
+		if (index >= file.length) {Log.info("ConfigLoader isSetArray: failed, index > file.length"); return result;}
+		if (get & file != null) {
+			result = isArray(index).array;
+		} else Log.info("ConfigLoader isSet: failed check " + index + ", config not loaded");
 		return result;
 	}
 	
@@ -587,10 +820,13 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	private int getProbels(int index) { //узнаем кол-во пробелов в начале строки
 		int result = -1;
 		if (index < 0) {Log.info("ConfigLoader getProbels: failed, index < 0"); return result;}
-		if (get == true && file != null & file[index] != null) {
-			String str = file[index];
-			String name = Utils.remChars(str.trim(), str.indexOf(":"), str.length());
-			result = str.indexOf(name); //где первый символ названия и есть кол-во пробелов до него
+		if (index >= file.length) {Log.info("ConfigLoader getProbels: failed, index > file.length"); return result;}
+		if (get & file != null & file[index] != null) {
+			ClearResult r = clearStr(file[index]);
+			if (r.cleaned != null) {
+				if (r.colon > -1) result = r.colon-1;
+				else if (r.hypindex > -1) result = r.hypindex-1;
+			}
 		} else Log.info("ConfigLoader getProbels: failed check " + index + ", config not loaded or file[i] == null");
 		return result;
 	}
@@ -598,18 +834,9 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	private boolean isParam(int index) { //является ли строка параметром
 		boolean result = false;
 		if (index < 0) {Log.info("ConfigLoader isParam: failed, index < 0"); return result;}
-		if (get == true && file != null & file[index] != null) {
-			String str = file[index].trim();
-			if (str.indexOf(":") > 0 && !isArray(file[index])) { //проверка, есть ли что-то после двоеточия (элементы массивов не учитываем)
-				String afterr[] = str.split(":");
-				if (afterr.length > 1) {
-					String after = afterr[1];
-					if (after != null) {
-						after = Utils.trim(after);
-						if (after.length() > 0) result = true;
-					}
-				}
-			}
+		if (index >= file.length) {Log.info("ConfigLoader isParam: failed, index > file.length"); return result;}
+		if (get & file != null & file[index] != null) {
+			result = clearStr(file[index]).broken;
 		} else Log.info("ConfigLoader isParam: failed check " + index + ", config not loaded or file[i] == null");
 		return result;
 	}
@@ -617,9 +844,9 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	private String getName(int index) { //получение названия переменной по индексу
 		String result = null;
 		if (index < 0) {Log.info("ConfigLoader getName: failed, index < 0"); return result;}
-		if (get == true && file != null & file[index] != null && file[index].indexOf(":") != -1) {
-			result = file[index].trim();
-			result = Utils.remChars(result, result.indexOf(":"), result.length());
+		if (index >= file.length) {Log.info("ConfigLoader getName: failed, index > file.length"); return result;}
+		if (get & file != null & file[index] != null) {
+			result = clearStr(file[index]).name;
 		} else Log.info("ConfigLoader getName: failed check " + index + ", config not loaded or file[i] == null");
 		return result;
 	}
@@ -627,7 +854,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	private int getIndexSection (String name) { //получить индекс секции по названию
 		int result = -1;
 		if (name == null) {Log.info("ConfigLoader getIndexSection: null name"); return result;}
-		if (get == true && file != null) {
+		if (get & file != null) {
 			for (int i = 0; i < file.length; i++) {
 				if (file[i] != null) {
 					if (Utils.remChars(file[i], file[i].indexOf(":"), file[i].length()).trim().equals(name)) {
@@ -636,7 +863,8 @@ public class ConfigLoader { //чтение конфига из файла и п�
 							break;
 						}
 					}
-			}}
+				}
+			}
 		} else Log.info("ConfigLoader getIndexSection: failed get " + name + " config not loaded or file == null");
 		return result;
 	}
@@ -644,7 +872,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	private int getIndexNoSection (String name) { //получить индекс переменной по названию (не секции)
 		int result = -1;
 		if (name == null) {Log.info("ConfigLoader getIndexNoSection: null name"); return result;}
-		if (get == true && file != null) {
+		if (get & file != null) {
 			for (int i = 0; i < file.length; i++) {
 				if (file[i] != null) {
 					if (Utils.remChars(file[i], file[i].indexOf(":"), file[i].length()).trim().equals(name)) {
@@ -653,7 +881,8 @@ public class ConfigLoader { //чтение конфига из файла и п�
 							break;
 						}
 					}
-			}}
+				}
+			}
 		} else Log.info("ConfigLoader getIndexNoSection: failed get " + name + " config not loaded or file == null");
 		return result;
 	}
@@ -661,7 +890,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	private boolean isSection(int index) { //проверка, является ли переменная секцией (по индексу)
 		boolean result = false;
 		if (index < 0) {Log.info("ConfigLoader isSection: failed, index < 0"); return result;}
-		if (get == true && file != null) {
+		if (get & file != null) {
 			int posprob = getProbels(index), next = index+1;
 			if (next < file.length) {
 				int nextprob = getProbels(next);

@@ -6,11 +6,12 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.util.ArrayList;
+import java.util.Iterator;
 
 import ru.intervi.littleconfig.utils.EasyLogger;
 
 /**
- * простой класс для чтения и записи файла на основе ArrayList<String>
+ * простой класс для чтения и записи текстового файла на основе ArrayList<String>
  */
 public class FileStringList { //класс-основа для создания БД на файле
 	public FileStringList() {}
@@ -26,7 +27,12 @@ public class FileStringList { //класс-основа для создания 
 	public FileStringList(File file) {read(file);}
 	
 	private EasyLogger Log = new EasyLogger();
-	private ArrayList<String> list = new ArrayList<String>();
+	private boolean load = false;
+	
+	/**
+	 * лист с содержимым текстового файла
+	 */
+	public ArrayList<String> list = new ArrayList<String>();
 	
 	/**
 	 * чтение файла
@@ -43,8 +49,12 @@ public class FileStringList { //класс-основа для создания 
 					if (line != null) list.add(line);
 				}
 				reader.close();
-			} catch (Exception e) {e.printStackTrace();}
-		} else Log.info("FileStringList: file " + file + " not found");
+				load = true;
+			} catch (Exception e) {e.printStackTrace(); load = false;}
+		} else {
+			Log.info("FileStringList: file " + file + " not found");
+			load = false;
+		}
 	}
 	
 	/**
@@ -63,9 +73,13 @@ public class FileStringList { //класс-основа для создания 
 		if (!list.isEmpty()) {
 			try {
 				BufferedWriter writer = new BufferedWriter(new FileWriter(file));
-				for (int i = 0; i < list.size(); i++) {
-					writer.write(list.get(i));
-					writer.newLine();
+				Iterator<String> iter = list.iterator();
+				while(iter.hasNext()) {
+					String line = iter.next();
+					if (line != null) {
+						writer.write(line);
+						writer.newLine();
+					}
 				}
 				writer.close();
 			} catch (Exception e) {e.printStackTrace();}
@@ -79,28 +93,12 @@ public class FileStringList { //класс-основа для создания 
 	public void write(File file) { //запись файла
 		write(file.getAbsolutePath());
 	}
-	
-	/**
-	 * получить лист с данными
-	 * @return строки из прочтенного файла
-	 */
-	public ArrayList<String> get() { //получение ArrayList
-		return this.list;
-	}
-	
-	/**
-	 * размер ArrayList
-	 * @return ArrayList<String>.size()
-	 */
-	public int size() { //получить размер ArrayList
-		return list.size();
-	}
-	
+		
 	/**
 	 * получить данные в виде String[]
 	 * @return ArrayList<String> => String[]
 	 */
-	public String[] getString() { //получить данные в виде массива строк
+	public String[] getStringArray() { //получить данные в виде массива строк
 		String result[] = null;
 		if (!list.isEmpty()) {
 			result = new String[list.size()];
@@ -124,5 +122,13 @@ public class FileStringList { //класс-основа для создания 
 	 */
 	public void setList(ArrayList<String> l) { //установит список
 		list = l;
+	}
+	
+	/**
+	 * удалась ли загрузка конфига
+	 * @return true если да; false если нет
+	 */
+	public boolean isLoad() { //был ли загружен конфиг
+		return load;
 	}
 }
