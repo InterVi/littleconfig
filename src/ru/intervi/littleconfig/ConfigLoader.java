@@ -175,8 +175,8 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	}
 	
 	private ClearResult clearStr(String s) { //очистка строки от комментов
-		if (s == null) return null;
 		ClearResult result = new ClearResult();
+		if (s == null) return result;
 		result.origin = s;
 		if (s.trim().toCharArray()[0] == '#') { //если коммент во всю строку
 			result.comindex = 0;
@@ -575,16 +575,13 @@ public class ConfigLoader { //чтение конфига из файла и п�
 				}
 			} else { //парсинг данных из многострочного массива
 				ArrayList<String> list = new ArrayList<String>();
-				int ind = index+1;
-				ClearResult r;
-				do {
-					r = clearStr(file[ind]);
-					if (r.empty | r.hypindex == -1) continue; //пропускаем не нужное
+				for (int i = (index+1); i < file.length; i++) {
+					ClearResult r = clearStr(file[i]);
+					if (r.colon > -1) break; //выход из цикла при попадании на опцию или секцию
+					else if (r.empty | r.hypindex == -1) continue; //пропускаем не нужное
 					String add = r.cleaned; //получаем готовый элемент
 					if (add != null) list.add(add);
-					if ((ind+1) == file.length) break;
-					ind++;
-				} while(isArray(file[ind]) || r.empty | r.fullstr);
+				}
 				result = new String[list.size()];
 				for (int i = 0; i < result.length; i++) result[i] = list.get(i);
 			}
@@ -662,13 +659,15 @@ public class ConfigLoader { //чтение конфига из файла и п�
 						}
 					}
 				} else { //нет контента - проверяем следующую строку на тире
-					if ((index+1) < file.length) {
-						if (isArray(file[(index+1)])) {
+					for (int i = (index+1); i < file.length; i++) {
+						ClearResult c = clearStr(file[i]);
+						if (c.hypindex > -1) { //ищем строку с тире
 							result.array = true;
 							result.check = true;
-						} else {
-							result.empty = true;
+							break;
+						} else if (c.colon > -1) { //если первой попадается строка с опцией - значит никакого массива нет
 							result.check = true;
+							break;
 						}
 					}
 				}
@@ -678,11 +677,13 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		return result;
 	}
 	
+	/*
 	private boolean isArray(String s) { //проверка, является ли строка компонентом массива (т.е. начинается с тире)
 		if (s == null) return false;
 		if (s.trim().length() <= 1) return false;
 		if (Utils.trim(s).substring(0, 1).equals("-")) return true; else return false;
 	}
+	*/
 	
 	private byte[] getByteArray(int index) { //получение массива типа byte по индексу
 		return Utils.byteFromStringArray(getStringArray(index));
@@ -773,18 +774,15 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		if (index < 0) {Log.info("ConfigLoader isSet: failed, index < 0"); return result;}
 		if (index >= file.length) {Log.info("ConfigLoader isSet: failed, index > file.length"); return result;}
 		if (get & file != null) {
-			result = isParam(index); //является ли строка параметром
-			if (index+1 < file.length) {if (!result & isArray(file[index+1])) result = true;} //является ли она массивом
-			if (!result & index+1 < file.length) {
-				ClearResult r = clearStr(file[index+1]);
-				if (r.name != null & r.broken & r.content == null) result = true; //является ли она секцией (упрощенный вариант проверки)
-			}
+			result = !clearStr(file[index]).broken; //является ли строка параметром
+			if (!result) result = isArray(index).array; //является ли она массивом
+			if (!result) result = isSection(index); //является ли она секцией
 		} else Log.info("ConfigLoader isSet(index): failed check " + index + ", config not loaded");
 		return result;
 	}
 	
 	/**
-	 * проверить, есть ли какое-либо значение у переменной (так же подходит для массивов)
+	 * проверить, есть ли какое-либо значение у переменной (подходит для проверки массивов и секций)
 	 * @param name имя переменной
 	 * @return true если есть; false если нету
 	 */
@@ -818,19 +816,23 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	}
 	
 	private int getProbels(int index) { //узнаем кол-во пробелов в начале строки
-		int result = -1;
-		if (index < 0) {Log.info("ConfigLoader getProbels: failed, index < 0"); return result;}
-		if (index >= file.length) {Log.info("ConfigLoader getProbels: failed, index > file.length"); return result;}
+		if (index < 0) {Log.info("ConfigLoader getProbels: failed, index < 0"); return -1;}
+		if (index >= file.length) {Log.info("ConfigLoader getProbels: failed, index > file.length"); return -1;}
 		if (get & file != null & file[index] != null) {
 			ClearResult r = clearStr(file[index]);
 			if (r.cleaned != null) {
-				if (r.colon > -1) result = r.colon-1;
-				else if (r.hypindex > -1) result = r.hypindex-1;
+				if (r.colon > -1) {
+					char c[] = r.cleaned.toCharArray();
+					for (int i = 0; i < c.length; i++) {
+						if (c[i] != ' ') return i-1;
+					}
+				} else if (r.hypindex > -1) return r.hypindex-1;
 			}
 		} else Log.info("ConfigLoader getProbels: failed check " + index + ", config not loaded or file[i] == null");
-		return result;
+		return -1;
 	}
 	
+	/*
 	private boolean isParam(int index) { //является ли строка параметром
 		boolean result = false;
 		if (index < 0) {Log.info("ConfigLoader isParam: failed, index < 0"); return result;}
@@ -840,7 +842,9 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		} else Log.info("ConfigLoader isParam: failed check " + index + ", config not loaded or file[i] == null");
 		return result;
 	}
+	*/
 	
+	/*
 	private String getName(int index) { //получение названия переменной по индексу
 		String result = null;
 		if (index < 0) {Log.info("ConfigLoader getName: failed, index < 0"); return result;}
@@ -850,18 +854,18 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		} else Log.info("ConfigLoader getName: failed check " + index + ", config not loaded or file[i] == null");
 		return result;
 	}
+	*/
 	
-	private int getIndexSection (String name) { //получить индекс секции по названию
+	private int getIndexSection(String name) { //получить индекс секции по названию
 		int result = -1;
 		if (name == null) {Log.info("ConfigLoader getIndexSection: null name"); return result;}
 		if (get & file != null) {
 			for (int i = 0; i < file.length; i++) {
-				if (file[i] != null) {
-					if (Utils.remChars(file[i], file[i].indexOf(":"), file[i].length()).trim().equals(name)) {
-						if (isSection(i)) {
-							result = i;
-							break;
-						}
+				ClearResult r = clearStr(file[i]);
+				if (r.broken & r.name != null) {
+					if (isSection(i) & r.name.equals(name)) {
+						result = i;
+						break;
 					}
 				}
 			}
@@ -869,17 +873,16 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		return result;
 	}
 	
-	private int getIndexNoSection (String name) { //получить индекс переменной по названию (не секции)
+	private int getIndexNoSection(String name) { //получить индекс переменной по названию (не секции)
 		int result = -1;
 		if (name == null) {Log.info("ConfigLoader getIndexNoSection: null name"); return result;}
 		if (get & file != null) {
 			for (int i = 0; i < file.length; i++) {
-				if (file[i] != null) {
-					if (Utils.remChars(file[i], file[i].indexOf(":"), file[i].length()).trim().equals(name)) {
-						if (isSet(i) && !isSection(i)) {
-							result = i;
-							break;
-						}
+				ClearResult r = clearStr(file[i]);
+				if (!r.broken | isArray(i).array) {
+					if (r.name.equals(name)) {
+						result = i;
+						break;
 					}
 				}
 			}
@@ -890,23 +893,19 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	private boolean isSection(int index) { //проверка, является ли переменная секцией (по индексу)
 		boolean result = false;
 		if (index < 0) {Log.info("ConfigLoader isSection: failed, index < 0"); return result;}
+		if (index >= file.length) {Log.info("ConfigLoader isSection: failed, index > file.length"); return result;}
 		if (get & file != null) {
-			int posprob = getProbels(index), next = index+1;
-			if (next < file.length) {
-				int nextprob = getProbels(next);
-				if (!isParam(index) & !isArray(file[next]) && nextprob > posprob) result = true;
-				if (result) {
-					boolean param = false; int i = next;
-					do {
-						int p = getProbels(i);
-						if (p > posprob) {
-							param = isSet(i);
-						} else break;
-						if (param) break;
-						i++;
-						if (i >= file.length) break;
-					} while (!param);
-					result = param; //если в секции не было параметров, значит это не секция
+			ClearResult r = clearStr(file[index]);
+			if (r.broken & r.name != null) { //строка не должна быть опцией
+				int p = getProbels(index);
+				for (int i = (index+1); i < file.length; i++) {
+					if (p > getProbels(i)) break; //выход из цикла
+					ClearResult c = clearStr(file[i]);
+					if (c.empty | c.fullstr) continue; //пропуск не нужного
+					if (c.colon > -1 & c.name != null) { //если найдена опция - значит это секция
+						result = true;
+						break;
+					}
 				}
 			}
 		} else Log.info("ConfigLoader isSection(index): failed check " + index + ", config not loaded or file[i] == null");
@@ -928,27 +927,26 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	}
 	
 	/**
-	 * получить названия переменных в данной секции
+	 * получить названия переменных в данной секции (не проверяются методом isSet)
 	 * @param name имя секции
 	 * @return названия переменных в виде массива строк (null, если ничего не найдено)
 	 */
 	public String[] getSectionVars(String name) { //получение названий переменных секции
 		String[] result = null;
 		if (name == null) {Log.info("ConfigLoader getSectionVars: null name"); return result;}
-		if (get == true && file != null) {
+		if (get & file != null) {
 			if (isSection(name)) {
-				int index = getIndexSection(name), prob = getProbels(index);
+				int index = getIndexSection(name), p = getProbels(index);
 				ArrayList<String> list = new ArrayList<String>();
-				for (int i = index+1; i < file.length; i++) { //подсчитываем кол-во переменных
-					int p = getProbels(i); //вложенные секции не учитываем
-					if (p > prob && isSet(i)) {
-						list.add(getName(i));
+				for (int i = (index+1); i < file.length; i++) {
+					ClearResult r = clearStr(file[i]);
+					if (r.empty | r.fullstr | r.name == null) continue; //пропуск не нужного
+					if (r.colon > -1 | r.hypindex > -1 && getProbels(i) < p) break; //выход из цикла
+					if (r.colon > -1 & r.name != null) {
+						list.add(r.name);
+						continue;
 					}
-				}
-				int vars = list.size();
-				result = new String[vars];
-				for (int i = 0; i < vars; i++) { //заполняем массив
-					result[i] = list.get(i);
+					if (isSection(index)) i += getSectionRealLength(r.name); //пропуск секций
 				}
 			}
 		} else Log.info("ConfigLoader isSection: failed check " + name + ", config not loaded or file[i] == null");
@@ -1015,7 +1013,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 			ArrayList<String> list = new ArrayList<String>();
 			for (int i = 0; i < file.length; i++) {
 				if (file[i] != null) {
-					if (isSection(i)) list.add(getName(i));
+					if (isSection(i)) list.add(clearStr(file[i]).name);
 				}
 			}
 			int l = list.size();
@@ -1042,7 +1040,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 			for (int i = index+1; i < file.length; i++) {
 				int p2 = getProbels(i);
 				if (p2 > p) {
-					if (isSection(i)) list.add(getName(i));
+					if (isSection(i)) list.add(clearStr(file[i]).name);
 				} else break;
 			}
 			int l = list.size();
@@ -1065,7 +1063,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 				do {
 					p2 = getProbels(i);
 					if (p2 > p && isSet(i)) {
-						if (getName(i).equals(name)) {
+						if (clearStr(file[i]).name.equals(name)) {
 							result = i;
 							break;
 						}
@@ -1281,7 +1279,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		 * @return имя переменной
 		 */
 		public String RecName(int index) { //узнать имя параметра по индексу
-			return getName(index);
+			return clearStr(file[index]).name;
 		}
 		/**
 		 * получить индекс секции по имени
@@ -1314,7 +1312,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		 * @return true если да; false если нет
 		 */
 		public boolean IsParam(int index) { //ялвяется ли строка параметром
-			return isParam(index);
+			return !clearStr(file[index]).broken;
 		}
 		/**
 		 * получить количество пробелов в начале строки
