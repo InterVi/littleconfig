@@ -336,23 +336,6 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		return result;
 	}
 	
-	/**
-	 * очистить весь конфиг от комментариев
-	 */
-	public void clearComments() { //очистить конфиг от комментариев
-		if (!get | file == null) return;
-		ArrayList<String> list = new ArrayList<String>();
-		for (int i = 0; i < file.length; i++) {
-			if (file[i] != null) {
-				ClearResult r = clearStr(file[i]);
-				if (r.fullstr) continue;
-				if (r.cleaned != null) list.add(r.cleaned);
-			}
-		}
-		file = new String[list.size()];
-		for (int i = 0; i < file.length; i++) file[i] = list.get(i);
-	}
-	
 	private String getString(int index) { //получение переменной типа String по индексу
 		String result = null;
 		if (index < 0) {Log.info("ConfigLoader getString(index): failed, index < 0"); return result;}
@@ -815,20 +798,12 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		return isSetArray(getIndexNoSection(name));
 	}
 	
-	private int getProbels(int index) { //узнаем кол-во пробелов в начале строки
-		if (index < 0) {Log.info("ConfigLoader getProbels: failed, index < 0"); return -1;}
-		if (index >= file.length) {Log.info("ConfigLoader getProbels: failed, index > file.length"); return -1;}
-		if (get & file != null & file[index] != null) {
-			ClearResult r = clearStr(file[index]);
-			if (r.cleaned != null) {
-				if (r.colon > -1) {
-					char c[] = r.cleaned.toCharArray();
-					for (int i = 0; i < c.length; i++) {
-						if (c[i] != ' ') return i-1;
-					}
-				} else if (r.hypindex > -1) return r.hypindex-1;
-			}
-		} else Log.info("ConfigLoader getProbels: failed check " + index + ", config not loaded or file[i] == null");
+	private int getProbels(String s) { //узнаем кол-во пробелов в начале строки
+		if (s == null) {Log.info("ConfigLoader getProbels: failed, null String"); return -1;}
+		char c[] = s.toCharArray();
+		for (int i = 0; i < c.length; i++) {
+			if (c[i] != ' ') return i-1;
+		}
 		return -1;
 	}
 	
@@ -897,9 +872,9 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		if (get & file != null) {
 			ClearResult r = clearStr(file[index]);
 			if (r.broken & r.name != null) { //строка не должна быть опцией
-				int p = getProbels(index);
+				int p = getProbels(file[index])+1;
 				for (int i = (index+1); i < file.length; i++) {
-					if (p > getProbels(i)) break; //выход из цикла
+					if (p > getProbels(file[i])) break; //выход из цикла
 					ClearResult c = clearStr(file[i]);
 					if (c.empty | c.fullstr) continue; //пропуск не нужного
 					if (c.colon > -1 & c.name != null) { //если найдена опция - значит это секция
@@ -935,40 +910,41 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		String[] result = null;
 		if (name == null) {Log.info("ConfigLoader getSectionVars: null name"); return result;}
 		if (get & file != null) {
-			if (isSection(name)) {
-				int index = getIndexSection(name), p = getProbels(index);
+			int index = getIndexSection(name);
+			if (index == -1) return result; //страховка
+			if (isSection(index)) {
+				int p = getProbels(file[index])+1;
 				ArrayList<String> list = new ArrayList<String>();
 				for (int i = (index+1); i < file.length; i++) {
 					ClearResult r = clearStr(file[i]);
 					if (r.empty | r.fullstr | r.name == null) continue; //пропуск не нужного
-					if (r.colon > -1 | r.hypindex > -1 && getProbels(i) < p) break; //выход из цикла
-					if (r.colon > -1 & r.name != null) {
-						list.add(r.name);
-						continue;
-					}
-					if (isSection(index)) i += getSectionRealLength(r.name); //пропуск секций
+					if (r.colon > -1 & getProbels(file[i]) < p) break; //выход из цикла, конец секции
+					if (isSection(index)) i += getSectionRealLength(i); //пропуск секций
+					if (r.colon > -1 & r.name != null) list.add(r.name);
 				}
 			}
 		} else Log.info("ConfigLoader isSection: failed check " + name + ", config not loaded or file[i] == null");
 		return result;
 	}
 	
+	/*
 	/**
 	 * получить количество переменных в секции
 	 * @param name имя секции
 	 * @return кол-во переменных в виде int
 	 */
+	/*
 	public int getSectionLength(String name) { //получение длинны секции (кол-ва переменных)
 		int result = -1;
 		if (name == null) {Log.info("ConfigLoader getSectionLength: null name"); return result;}
 		if (get == true && file != null) {
 			if (isSection(name)) {
 				int index = getIndexSection(name);
-				int p = getProbels(index);
+				int p = getProbels(file[index]);
 				int p2 = 0, i = index+1;
 				result = 0;
 				do {
-					p2 = getProbels(i);
+					p2 = getProbels(file[i]);
 					if (p2 > p && isSet(i)) result++;
 					i++;
 					if (i >= file.length) break;
@@ -977,30 +953,38 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		} else Log.info("ConfigLoader getSectionLength: failed get " + name + " config not loaded or file == null");
 		return result;
 	}
+	*/
+	
+	private int getSectionRealLength(int index) { //получение реальной длинны секции в конфиге (кол-во строк) (по индексу)
+		int result = -1;
+		if (index < 0) {Log.info("ConfigLoader getSectionRealLength(index): failed, index < 0"); return result;}
+		if (index >= file.length) {Log.info("ConfigLoader getSectionRealLength(index): failed, index > file.length"); return result;}
+		if (get & file != null) {
+			if (index == -1) return result; //страховка
+			if (isSection(index)) {
+				int p = getProbels(file[index])+1;
+				for (int i = (index+1); i < file.length; i++) {
+					ClearResult r = clearStr(file[i]);
+					if (r.empty | r.fullstr) continue; //пропуск не нужного
+					if (p > getProbels(file[i])) { //выход из цикла и сохранение результата
+						result = (i-1)-(index+1);
+						break;
+					}
+				}
+				if (result == -1) result = (file.length-1)-(index+1); //если цикл дошел до конца массива
+			}
+		} else Log.info("ConfigLoader getSectionRealLength(index): failed get " + index + " config not loaded or file == null");
+		return result;
+	}
 	
 	/**
 	 * получить длинну секции (количество строк в конфиге, строка с названием секции в число не входит)
 	 * @param name имя секции
 	 * @return количество строк в секции в виде int (-1, если секция не найдена либо пуста)
 	 */
-	public int getSectionRealLength(String name) { //получение реальной длинны секции в конфиге (кол-во строк)
-		int result = -1;
-		if (name == null) {Log.info("ConfigLoader getSectionRealLength: null name"); return result;}
-		if (get == true && file != null) {
-			if (isSection(name)) {
-				int index = getIndexSection(name);
-				int p = getProbels(index);
-				int p2 = 0, i = index+1;
-				result = 0;
-				do {
-					p2 = getProbels(i);
-					if (p2 > p) result++;
-					i++;
-					if (i >= file.length) break;
-				} while (p2 > p);
-			}
-		} else Log.info("ConfigLoader getSectionRealLength: failed get " + name + " config not loaded or file == null");
-		return result;
+	public int getSectionRealLength(String name) { //получение реальной длинны секции в конфиге (кол-во строк) (по названию)
+		if (name == null) {Log.info("ConfigLoader getSectionRealLength: null name"); return -1;}
+		return getSectionRealLength(getIndexSection(name));
 	}
 	
 	/**
@@ -1009,17 +993,15 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	 */
 	public String[] getSectionNames() { //получение названий секций во всем конфиге
 		String[] result = null;
-		if (get == true && file != null) {
+		if (get & file != null) {
 			ArrayList<String> list = new ArrayList<String>();
 			for (int i = 0; i < file.length; i++) {
-				if (file[i] != null) {
-					if (isSection(i)) list.add(clearStr(file[i]).name);
+				ClearResult r = clearStr(file[i]);
+				if (r.empty | r.fullstr) continue; //пропуск лишнего
+				if (r.broken && isSection(i)) {
+					list.add(r.name);
+					i += getSectionRealLength(i); //пропуск содержимого секций
 				}
-			}
-			int l = list.size();
-			result = new String[l];
-			for (int i = 0; i < l; i++) {
-				result[i] = list.get(i);
 			}
 		} else Log.info("ConfigLoader getSectionNames: failed get sections names, config not loaded or file == null");
 		return result;
@@ -1033,21 +1015,21 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	public String[] getSectionNames(String name) { //получение названий секций в секции
 		String[] result = null;
 		if (name == null) {Log.info("ConfigLoader getSectionNames: null name"); return result;}
-		if (get == true && file != null) {
+		if (get & file != null) {
 			int index = getIndexSection(name);
-			int p = getProbels(index);
+			int p = getProbels(file[index])+1;
 			ArrayList<String> list = new ArrayList<String>();
-			for (int i = index+1; i < file.length; i++) {
-				int p2 = getProbels(i);
-				if (p2 > p) {
-					if (isSection(i)) list.add(clearStr(file[i]).name);
-				} else break;
+			for (int i = (index+1); i < file.length; i++) {
+				ClearResult r = clearStr(file[i]);
+				if (r.empty | r.fullstr) continue; //пропуск не нужного
+				if (p > getProbels(file[i])) break; //выход из цикла
+				if (isSection(i)) {
+					list.add(r.name);
+					i += getSectionRealLength(i); //пропуск содержимого секций
+				}
 			}
-			int l = list.size();
-			result = new String[l];
-			for (int i = 0; i < l; i++) {
-				result[i] = list.get(i);
-			}
+			result = new String[list.size()];
+			for (int i = 0; i < result.length; i++) result[i] = list.get(i);
 		} else Log.info("ConfigLoader getSectionNames: failed get " + name + " config not loaded or file == null");
 		return result;
 	}
@@ -1055,22 +1037,19 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	private int getIndexInSection(String section, String name) { //получение индекса переменной в секции
 		int result = -1;
 		if (name == null | section == null) {Log.info("ConfigLoader getIndexInSection: null name or null section"); return result;}
-		if (get == true && file != null) {
-			if (isSection(section)) {
-				int index = getIndexSection(section);
-				int p = getProbels(index);
-				int p2 = 0, i = index+1;
-				do {
-					p2 = getProbels(i);
-					if (p2 > p && isSet(i)) {
-						if (clearStr(file[i]).name.equals(name)) {
-							result = i;
-							break;
-						}
+		if (get & file != null) {
+			int index = getIndexSection(section);
+			if (isSection(index)) {
+				int p = getProbels(file[index])+1;
+				for (int i = (index+1); i < file.length; i++) {
+					ClearResult r = clearStr(file[i]);
+					if (r.empty | r.fullstr | r.colon == -1) continue;
+					if (p > getProbels(file[i])) break;
+					if (r.name != null && r.name.equals(name)) {
+						result = i;
+						break;
 					}
-					i++;
-					if (i >= file.length) break;
-				} while (p2 > p);
+				}
 			}
 		} else Log.info("ConfigLoader getIndexInSection: failed get " + name + " in " + section + " config not loaded or file == null");
 		return result;
@@ -1085,7 +1064,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	public boolean isSetInSection(String section, String name) { //проверка, установлена ли переменная в сеции
 		boolean result = false;
 		if (name == null | section == null) {Log.info("ConfigLoader isSetInSection: null name or null section"); return result;}
-		if (get == true && file != null) {
+		if (get & file != null) {
 			result = isSet(getIndexInSection(section, name));
 		} else Log.info("ConfigLoader isSetInSection: failed check " + name + " in " + section + " config not loaded or file == null");
 		return result;
@@ -1100,7 +1079,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	public boolean isSetArrayInSection(String section, String name) { //проверка, установлен ли массив в секции
 		boolean result = false;
 		if (name == null | section == null) {Log.info("ConfigLoader isSetArrayInSection: null name or null section"); return result;}
-		if (get == true && file != null) {
+		if (get & file != null) {
 			result = isSetArray(getIndexInSection(section, name));
 		} else Log.info("ConfigLoader isSetArrayInSection: failed check " + name + " in " + section + " config not loaded or file == null");
 		return result;
@@ -1112,12 +1091,42 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	 * @param name имя переменной
 	 * @return значение переменной в виде строки (null, если переменная не найдена)
 	 */
-	public String getStringSection(String section, String name) { //получение переменной типа String из секции
+	public String getStringInSection(String section, String name) { //получение переменной типа String из секции
 		String result = null;
-		if (name == null | section == null) {Log.info("ConfigLoader getStringSection: null name or null section"); return result;}
-		if (get == true && file != null) {
+		if (name == null | section == null) {Log.info("ConfigLoader getStringInSection: null name or null section"); return result;}
+		if (get & file != null) {
 			result = getString(getIndexInSection(section, name));
-		} else Log.info("ConfigLoader getStringSection: failed get " + name + " in " + section + " config not loaded or file == null");
+		} else Log.info("ConfigLoader getStringInSection: failed get " + name + " in " + section + " config not loaded or file == null");
+		return result;
+	}
+	
+	/**
+	 * получить значение переменной в виде byte из секции
+	 * @param section имя секции
+	 * @param name имя переменной
+	 * @return значение переменной в виде byte (-1, если переменная не найдена)
+	 */
+	public byte getByteInSection(String section, String name) { //получение переменной типа byte из секции
+		byte result = -1;
+		if (name == null | section == null) {Log.info("ConfigLoader getByteInSection: null name or null section"); return result;}
+		if (get & file != null) {
+			result = getByte(getIndexInSection(section, name));
+		} else Log.info("ConfigLoader getByteInSection: failed get " + name + " in " + section + " config not loaded or file == null");
+		return result;
+	}
+	
+	/**
+	 * получить значение переменной в виде short из секции
+	 * @param section имя секции
+	 * @param name имя переменной
+	 * @return значение переменной в виде short (-1, если переменная не найдена)
+	 */
+	public short getShortInSection(String section, String name) { //получение переменной типа short из секции
+		short result = -1;
+		if (name == null | section == null) {Log.info("ConfigLoader getShortInSection: null name or null section"); return result;}
+		if (get & file != null) {
+			result = getShort(getIndexInSection(section, name));
+		} else Log.info("ConfigLoader getShortInSection: failed get " + name + " in " + section + " config not loaded or file == null");
 		return result;
 	}
 	
@@ -1127,12 +1136,12 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	 * @param name имя переменной
 	 * @return значение переменной в виде int (-1, если переменная не найдена)
 	 */
-	public int getIntSection(String section, String name) { //получение переменной типа int из секции
+	public int getIntInSection(String section, String name) { //получение переменной типа int из секции
 		int result = -1;
-		if (name == null | section == null) {Log.info("ConfigLoader getIntSection: null name or null section"); return result;}
-		if (get == true && file != null) {
+		if (name == null | section == null) {Log.info("ConfigLoader getIntInSection: null name or null section"); return result;}
+		if (get & file != null) {
 			result = getInt(getIndexInSection(section, name));
-		} else Log.info("ConfigLoader getIntSection: failed get " + name + " in " + section + " config not loaded or file == null");
+		} else Log.info("ConfigLoader getIntInSection: failed get " + name + " in " + section + " config not loaded or file == null");
 		return result;
 	}
 	
@@ -1142,12 +1151,12 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	 * @param name имя переменной
 	 * @return значение переменной в виде long (-1, если переменная не найдена)
 	 */
-	public long getLongSection(String section, String name) { //получение переменной типа long из секции
+	public long getLongInSection(String section, String name) { //получение переменной типа long из секции
 		long result = -1;
-		if (name == null | section == null) {Log.info("ConfigLoader getLongSection: null name or null section"); return result;}
-		if (get == true && file != null) {
+		if (name == null | section == null) {Log.info("ConfigLoader getLongInSection: null name or null section"); return result;}
+		if (get & file != null) {
 			result = getLong(getIndexInSection(section, name));
-		} else Log.info("ConfigLoader getLongSection: failed get " + name + " in " + section + " config not loaded or file == null");
+		} else Log.info("ConfigLoader getLongInSection: failed get " + name + " in " + section + " config not loaded or file == null");
 		return result;
 	}
 	
@@ -1157,12 +1166,12 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	 * @param name имя переменной
 	 * @return значение переменной в виде double (-1, если переменная не найдена)
 	 */
-	public double getDoubleSection(String section, String name) { //получение переменной типа double из секции
+	public double getDoubleInSection(String section, String name) { //получение переменной типа double из секции
 		double result = -1;
-		if (name == null | section == null) {Log.info("ConfigLoader getDoubleSection: null name or null section"); return result;}
-		if (get == true && file != null) {
+		if (name == null | section == null) {Log.info("ConfigLoader getDoubleInSection: null name or null section"); return result;}
+		if (get & file != null) {
 			result = getDouble(getIndexInSection(section, name));
-		} else Log.info("ConfigLoader getDoubleSection: failed get " + name + " in " + section + " config not loaded or file == null");
+		} else Log.info("ConfigLoader getDoubleInSection: failed get " + name + " in " + section + " config not loaded or file == null");
 		return result;
 	}
 	
@@ -1172,12 +1181,12 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	 * @param name имя переменной
 	 * @return значение переменной в виде boolean (false, если переменная не найдена)
 	 */
-	public boolean getBooleanSection(String section, String name) { //получение переменной типа boolean из секции
+	public boolean getBooleanInSection(String section, String name) { //получение переменной типа boolean из секции
 		boolean result = false;
-		if (name == null | section == null) {Log.info("ConfigLoader getBooleanSection: null name or null section"); return result;}
-		if (get == true && file != null) {
+		if (name == null | section == null) {Log.info("ConfigLoader getBooleanInSection: null name or null section"); return result;}
+		if (get & file != null) {
 			result = getBoolean(getIndexInSection(section, name));
-		} else Log.info("ConfigLoader getBooleanSection: failed get " + name + " in " + section + " config not loaded or file == null");
+		} else Log.info("ConfigLoader getBooleanInSection: failed get " + name + " in " + section + " config not loaded or file == null");
 		return result;
 	}
 	
@@ -1187,12 +1196,42 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	 * @param name имя переменной
 	 * @return значение переменной в виде массива строк (null, если переменная не найдена)
 	 */
-	public String[] getStringArraySection(String section, String name) { //получение переменной типа массив String из секции
+	public String[] getStringArrayInSection(String section, String name) { //получение переменной типа массив String из секции
 		String[] result = null;
-		if (name == null | section == null) {Log.info("ConfigLoader getStringArraySection: null name or null section"); return result;}
-		if (get == true && file != null) {
+		if (name == null | section == null) {Log.info("ConfigLoader getStringArrayInSection: null name or null section"); return result;}
+		if (get & file != null) {
 			result = getStringArray(getIndexInSection(section, name));
-		} else Log.info("ConfigLoader getStringArraySection: failed get " + name + " in " + section + " config not loaded or file == null");
+		} else Log.info("ConfigLoader getStringArrayInSection: failed get " + name + " in " + section + " config not loaded or file == null");
+		return result;
+	}
+	
+	/**
+	 * получить значение переменной в виде массива byte из секции
+	 * @param section имя секции
+	 * @param name имя переменной
+	 * @return значение переменной в виде массива byte (null, если переменная не найдена)
+	 */
+	public byte[] getByteArrayInSection(String section, String name) { //получение переменной типа массив byte из секции
+		byte[] result = null;
+		if (name == null | section == null) {Log.info("ConfigLoader getByteArrayInSection: null name or null section"); return result;}
+		if (get & file != null) {
+			result = getByteArray(getIndexInSection(section, name));
+		} else Log.info("ConfigLoader getByteArrayInSection: failed get " + name + " in " + section + " config not loaded or file == null");
+		return result;
+	}
+	
+	/**
+	 * получить значение переменной в виде массива short из секции
+	 * @param section имя секции
+	 * @param name имя переменной
+	 * @return значение переменной в виде массива short (null, если переменная не найдена)
+	 */
+	public short[] getShortArrayInSection(String section, String name) { //получение переменной типа массив short из секции
+		short[] result = null;
+		if (name == null | section == null) {Log.info("ConfigLoader getShortArrayInSection: null name or null section"); return result;}
+		if (get & file != null) {
+			result = getShortArray(getIndexInSection(section, name));
+		} else Log.info("ConfigLoader getShortArrayInSection: failed get " + name + " in " + section + " config not loaded or file == null");
 		return result;
 	}
 	
@@ -1202,12 +1241,12 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	 * @param name имя переменной
 	 * @return значение переменной в виде массива int (null, если переменная не найдена)
 	 */
-	public int[] getIntArraySection(String section, String name) { //получение переменной типа массив int из секции
+	public int[] getIntArrayInSection(String section, String name) { //получение переменной типа массив int из секции
 		int[] result = null;
-		if (name == null | section == null) {Log.info("ConfigLoader getIntArraySection: null name or null section"); return result;}
-		if (get == true && file != null) {
+		if (name == null | section == null) {Log.info("ConfigLoader getIntArrayInSection: null name or null section"); return result;}
+		if (get & file != null) {
 			result = getIntArray(getIndexInSection(section, name));
-		} else Log.info("ConfigLoader getIntArraySection: failed get " + name + " in " + section + " config not loaded or file == null");
+		} else Log.info("ConfigLoader getIntArrayInSection: failed get " + name + " in " + section + " config not loaded or file == null");
 		return result;
 	}
 	
@@ -1217,12 +1256,12 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	 * @param name имя переменной
 	 * @return значение переменной в виде массива long (null, если переменная не найдена)
 	 */
-	public long[] getLongArraySection(String section, String name) { //получение переменной типа массив long из секции
+	public long[] getLongArrayInSection(String section, String name) { //получение переменной типа массив long из секции
 		long[] result = null;
-		if (name == null | section == null) {Log.info("ConfigLoader getLongArraySection: null name or null section"); return result;}
-		if (get == true && file != null) {
+		if (name == null | section == null) {Log.info("ConfigLoader getLongArrayInSection: null name or null section"); return result;}
+		if (get & file != null) {
 			result = getLongArray(getIndexInSection(section, name));
-		} else Log.info("ConfigLoader getLongArraySection: failed get " + name + " in " + section + " config not loaded or file == null");
+		} else Log.info("ConfigLoader getLongArrayInSection: failed get " + name + " in " + section + " config not loaded or file == null");
 		return result;
 	}
 	
@@ -1232,12 +1271,12 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	 * @param name имя переменной
 	 * @return значение переменной в виде массива double (null, если переменная не найдена)
 	 */
-	public double[] getDoubleArraySection(String section, String name) { //получение переменной типа массив double из секции
+	public double[] getDoubleArrayInSection(String section, String name) { //получение переменной типа массив double из секции
 		double[] result = null;
-		if (name == null | section == null) {Log.info("ConfigLoader getDoubleArraySection: null name or null section"); return result;}
-		if (get == true && file != null) {
+		if (name == null | section == null) {Log.info("ConfigLoader getDoubleArrayInSection: null name or null section"); return result;}
+		if (get & file != null) {
 			result = getDoubleArray(getIndexInSection(section, name));
-		} else Log.info("ConfigLoader getDoubleArraySection: failed get " + name + " in " + section + " config not loaded or file == null");
+		} else Log.info("ConfigLoader getDoubleArrayInSection: failed get " + name + " in " + section + " config not loaded or file == null");
 		return result;
 	}
 	
@@ -1247,12 +1286,12 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	 * @param name имя переменной
 	 * @return значение переменной в виде массива boolean (null, если переменная не найдена)
 	 */
-	public boolean[] getBooleanArraySection(String section, String name) { //получение переменной типа массив boolean из секции
+	public boolean[] getBooleanArrayInSection(String section, String name) { //получение переменной типа массив boolean из секции
 		boolean[] result = null;
-		if (name == null | section == null) {Log.info("ConfigLoader getBooleanArraySection: null name or null section"); return result;}
-		if (get == true && file != null) {
+		if (name == null | section == null) {Log.info("ConfigLoader getBooleanArrayInSection: null name or null section"); return result;}
+		if (get & file != null) {
 			result = getBooleanArray(getIndexInSection(section, name));
-		} else Log.info("ConfigLoader getBooleanArraySection: failed get " + name + " in " + section + " config not loaded or file == null");
+		} else Log.info("ConfigLoader getBooleanArrayInSection: failed get " + name + " in " + section + " config not loaded or file == null");
 		return result;
 	}
 	
@@ -1270,23 +1309,23 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		 * @param name имя переменной
 		 * @return индекс переменной в конфиге
 		 */
-		public int RecIndexNoSection(String name) { //узнать индекс параметра по имени
+		public int getIndexNoSection(String name) { //узнать индекс параметра по имени
 			return getIndexNoSection(name);
 		}
 		/**
-		 * получить имя переменной по индексу
-		 * @param index индекс переменной
-		 * @return имя переменной
+		 * очистить и проверить строку внутренним методом clearStr
+		 * @param s строка
+		 * @return результат проверки и очистки
 		 */
-		public String RecName(int index) { //узнать имя параметра по индексу
-			return clearStr(file[index]).name;
+		public ClearResult clearStr(String s) { //проверить и очистить строку от комментов
+			return clearStr(s);
 		}
 		/**
 		 * получить индекс секции по имени
 		 * @param name имя секции
 		 * @return индекс секции в конфиге
 		 */
-		public int RecIndexSection(String name) { //узнать индекс секции по названию
+		public int getIndexSection(String name) { //узнать индекс секции по названию
 			return getIndexSection(name);
 		}
 		/**
@@ -1294,7 +1333,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		 * @param index индекс переменной
 		 * @return true если да; false если нет
 		 */
-		public boolean IsSection(int index) { //проверить, является ли параметр секцией (по индексу)
+		public boolean isSection(int index) { //проверить, является ли параметр секцией (по индексу)
 			return isSection(index);
 		}
 		/**
@@ -1303,31 +1342,23 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		 * @param name имя переменной
 		 * @return индекс переменной в конфиге
 		 */
-		public int RecIndexInSection(String section, String name) { //получить индекс параметра в секции
+		public int getIndexInSection(String section, String name) { //получить индекс параметра в секции
 			return getIndexInSection(section, name);
 		}
 		/**
-		 * проверить, является ли строка переменной
-		 * @param index индекс строки в конфиге
-		 * @return true если да; false если нет
-		 */
-		public boolean IsParam(int index) { //ялвяется ли строка параметром
-			return !clearStr(file[index]).broken;
-		}
-		/**
 		 * получить количество пробелов в начале строки
-		 * @param index индекс строки в конфиге
+		 * @param s строка
 		 * @return количество пробелов перед символами в начале строки
 		 */
-		public int RecProbels(int index) { //получить кол-во пробелов в начале строки
-			return getProbels(index);
+		public int getProbels(String s) { //получить кол-во пробелов в начале строки
+			return getProbels(s);
 		}
 		/**
 		 * проверить, есть ли какое-либо значение у массива
 		 * @param index индекс строки с массивом в конфиге (строка с его названием)
 		 * @return true если да; false если нет
 		 */
-		public boolean IsSetArray(int index) { //проверка, прописан ли массив
+		public boolean isSetArray(int index) { //проверка, прописан ли массив
 			return isSetArray(index);
 		}
 		/**
@@ -1335,7 +1366,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		 * @param index индекс строки с переменной в конфиге
 		 * @return значение переменной в виде строки (null, если перемменная не найдена)
 		 */
-		public String RecString(int index) { //получить строку по индексу
+		public String getString(int index) { //получить строку по индексу
 			return getString(index);
 		}
 		/**
@@ -1343,25 +1374,32 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		 * @param index индекс строки с массивом в конфине
 		 * @return значение переменной в виде массива строк (null, если переменная не найдена)
 		 */
-		public String[] RecStringArray(int index) { //получить массив строк по индексу
+		public String[] getStringArray(int index) { //получить массив строк по индексу
 			return getStringArray(index);
 		}
 		/**
-		 * получить класс IsArray
-		 * @return new IsArray()
-		 */
-		public IsArray getIsArrayResult() { //получить внутренний класс IsArray
-			IsArray is = new IsArray();
-			return is;
-		}
-		/**
 		 * проверить массив внутренним методом isArray
-		 * @param line строка с массивом (его названием)
 		 * @param index индекс строки в конфиге
 		 * @return класс IsArray с данными проверки
 		 */
-		public IsArray IsArray(String line, int index) { //проверить массив внутренним методом IsArray
-			return IsArray(line, index);
+		public IsArray isArray(int index) { //проверить массив внутренним методом IsArray
+			return isArray(index);
+		}
+		/**
+		 * очистить весь конфиг от комментариев
+		 */
+		public void clearComments() { //очистить конфиг от комментариев
+			if (!get | file == null) return;
+			ArrayList<String> list = new ArrayList<String>();
+			for (int i = 0; i < file.length; i++) {
+				if (file[i] != null) {
+					ClearResult r = clearStr(file[i]);
+					if (r.fullstr) continue;
+					if (r.cleaned != null) list.add(r.cleaned);
+				}
+			}
+			file = new String[list.size()];
+			for (int i = 0; i < file.length; i++) file[i] = list.get(i);
 		}
 	}
 	/**
