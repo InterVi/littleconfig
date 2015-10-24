@@ -807,30 +807,6 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		return -1;
 	}
 	
-	/*
-	private boolean isParam(int index) { //является ли строка параметром
-		boolean result = false;
-		if (index < 0) {Log.info("ConfigLoader isParam: failed, index < 0"); return result;}
-		if (index >= file.length) {Log.info("ConfigLoader isParam: failed, index > file.length"); return result;}
-		if (get & file != null & file[index] != null) {
-			result = clearStr(file[index]).broken;
-		} else Log.info("ConfigLoader isParam: failed check " + index + ", config not loaded or file[i] == null");
-		return result;
-	}
-	*/
-	
-	/*
-	private String getName(int index) { //получение названия переменной по индексу
-		String result = null;
-		if (index < 0) {Log.info("ConfigLoader getName: failed, index < 0"); return result;}
-		if (index >= file.length) {Log.info("ConfigLoader getName: failed, index > file.length"); return result;}
-		if (get & file != null & file[index] != null) {
-			result = clearStr(file[index]).name;
-		} else Log.info("ConfigLoader getName: failed check " + index + ", config not loaded or file[i] == null");
-		return result;
-	}
-	*/
-	
 	private int getIndexSection(String name) { //получить индекс секции по названию
 		int result = -1;
 		if (name == null) {Log.info("ConfigLoader getIndexSection: null name"); return result;}
@@ -926,34 +902,6 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		} else Log.info("ConfigLoader isSection: failed check " + name + ", config not loaded or file[i] == null");
 		return result;
 	}
-	
-	/*
-	/**
-	 * получить количество переменных в секции
-	 * @param name имя секции
-	 * @return кол-во переменных в виде int
-	 */
-	/*
-	public int getSectionLength(String name) { //получение длинны секции (кол-ва переменных)
-		int result = -1;
-		if (name == null) {Log.info("ConfigLoader getSectionLength: null name"); return result;}
-		if (get == true && file != null) {
-			if (isSection(name)) {
-				int index = getIndexSection(name);
-				int p = getProbels(file[index]);
-				int p2 = 0, i = index+1;
-				result = 0;
-				do {
-					p2 = getProbels(file[i]);
-					if (p2 > p && isSet(i)) result++;
-					i++;
-					if (i >= file.length) break;
-				} while (p2 > p);
-			}
-		} else Log.info("ConfigLoader getSectionLength: failed get " + name + " config not loaded or file == null");
-		return result;
-	}
-	*/
 	
 	private int getSectionRealLength(int index) { //получение реальной длинны секции в конфиге (кол-во строк) (по индексу)
 		int result = -1;
@@ -1386,7 +1334,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 			return isArray(index);
 		}
 		/**
-		 * очистить весь конфиг от комментариев
+		 * очистить весь конфиг от комментариев и пустых строк
 		 */
 		public void clearComments() { //очистить конфиг от комментариев
 			if (!get | file == null) return;
@@ -1394,7 +1342,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 			for (int i = 0; i < file.length; i++) {
 				if (file[i] != null) {
 					ClearResult r = clearStr(file[i]);
-					if (r.fullstr) continue;
+					if (r.fullstr | r.empty) continue;
 					if (r.cleaned != null) list.add(r.cleaned);
 				}
 			}
