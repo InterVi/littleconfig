@@ -35,6 +35,14 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	private String[] file;
 	
 	/**
+	 * проверить, загружен ли конфиг
+	 * @return true если да; false если нет
+	 */
+	public boolean isLoad() { //загружен ли конфиг
+		return get;
+	}
+	
+	/**
 	 * класс для передачи результата прогрузки файла
 	 */
 	public class LoaderResult { //класс для передачи результата прогрузки файла
@@ -97,6 +105,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	public LoaderResult getList(String f) { //получаем текстовый файл массивом, очищенный от комментов
 		LoaderResult result = new LoaderResult();
 		FileStringList list = new FileStringList(f);
+		list.Log.offLog();
 		if (list.isLoad()) {
 			result.list = list.getStringArray();
 			result.load = true;
@@ -201,7 +210,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 				p++;
 				continue;
 			}
-			if (d == -1 | hyp == -1) { //нахождение двоеточия
+			if (d == -1 & hyp == -1) { //нахождение двоеточия
 				if (c[i] == ':') {
 					if (i == 0 | i == (p+1)) { //если перед двоеточием нет символов - опция бракованная
 						result.broken = true;
@@ -211,8 +220,8 @@ public class ConfigLoader { //чтение конфига из файла и п�
 					hyp = i;
 					result.broken = true;
 					continue;
-				} else result.broken = true; //если первый символ не двоеточие и не дефис, то строка бракованная
-			} else if (d > -1 | hyp > -1) {
+				}
+			} else {
 				if (q == -1 & ci == -1) {
 					if (c[i] == '"') { //поиск кавычки
 						if ((i-d) > 1) {
@@ -826,7 +835,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		if (get & file != null) {
 			for (int i = 0; i < file.length; i++) {
 				ClearResult r = clearStr(file[i]);
-				if (!r.broken | isArray(i).array) {
+				if (!r.broken | isArray(i).array && r.name != null) {
 					if (r.name.equals(name)) {
 						result = i;
 						break;

@@ -26,7 +26,10 @@ public class FileStringList { //класс-основа для создания 
 	 */
 	public FileStringList(File file) {read(file);}
 	
-	private EasyLogger Log = new EasyLogger();
+	/**
+	 * используемый логгер для вывода сообщений
+	 */
+	public EasyLogger Log = new EasyLogger();
 	private boolean load = false;
 	
 	/**
