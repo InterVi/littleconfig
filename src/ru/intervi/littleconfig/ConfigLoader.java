@@ -81,7 +81,11 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	 * @param value массив строк, в котором представлен конфиг
 	 */
 	public void fakeLoad(String[] value) { //фейковая загрузка (установка значения из массива)
-		file = value;
+		if (value == null) return;
+		file = new String[value.length];
+		for (int i = 0; i < value.length; i++) { //чистка от null'ов
+			if (value[i] != null) file[i] = value[i]; else file[i] = "";
+		}
 		get = true;
 	}
 	
@@ -561,7 +565,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 				for (int i = (index+1); i < file.length; i++) {
 					ClearResult r = clearStr(file[i]);
 					if (r.colon > -1) break; //выход из цикла при попадании на опцию или секцию
-					else if (r.empty | r.hypindex == -1) continue; //пропускаем не нужное
+					else if (r.hypindex == -1) continue; //пропускаем не нужное
 					String add = r.cleaned; //получаем готовый элемент
 					if (add != null) list.add(add);
 				}
@@ -659,14 +663,6 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		else if (file == null) Log.info("ConfigLoader isArray(index): " + index + "(index) array file = null");
 		return result;
 	}
-	
-	/*
-	private boolean isArray(String s) { //проверка, является ли строка компонентом массива (т.е. начинается с тире)
-		if (s == null) return false;
-		if (s.trim().length() <= 1) return false;
-		if (Utils.trim(s).substring(0, 1).equals("-")) return true; else return false;
-	}
-	*/
 	
 	private byte[] getByteArray(int index) { //получение массива типа byte по индексу
 		return Utils.byteFromStringArray(getStringArray(index));
@@ -1348,6 +1344,37 @@ public class ConfigLoader { //чтение конфига из файла и п�
 			}
 			file = new String[list.size()];
 			for (int i = 0; i < file.length; i++) file[i] = list.get(i);
+		}
+		/**
+		 * узнать реальную длинну многострочного массива в конфиге
+		 * @param index индекс массива
+		 * @return количество строк от первого элемента до последнего
+		 */
+		public int getArrayRealLength(int index) { //узнать реальную длинну массива
+			int result = -1;
+			if (index < 0) {Log.info("LoaderMethods getArrayRealLength(index): failed, index < 0"); return result;}
+			if (index >= file.length) {Log.info("LoaderMethods getArrayRealLength(index): failed, index > file.length"); return result;}
+			IsArray ia = isArray(index);
+			if (ia.array) {
+				if (ia.skobka) result = 0; else {
+					for (int i = (index+1); i < file.length; i++) { //узнаем конец массива
+						ClearResult r = clearStr(file[i]);
+						if (r.colon > -1) { //выход из цикла при попадании на опцию или секцию
+							result = (i-1)-(index+1);
+							break;
+						}
+					}
+					for (int i = (index+result); i > index; i--) { //вычитаем пустые строки в конце
+						ClearResult r = clearStr(file[i]);
+						if (r.hypindex > -1) { //выход из цикла при попадании на последний элемент массива
+							result -= (i-1)-(index+1);
+							break;
+						}
+						if ((i-1) == index && result == -1) result = (file.length-1)-(index+1); //если цикл дошел до конца массива
+					}
+				}
+			}
+			return result;
 		}
 	}
 	/**
