@@ -11,13 +11,13 @@ public class TwoDimenParser {
 	 * @param array двухмерный массив строк
 	 * @return одномерный массив строк, с элементами в квадратных скобках
 	 */
-	public static String[] parseInArray(String[][] array[][]) { //складывает двухмерный массив в одномерный, перечисляя элементы в квадратных скобках
+	public static String[] parseInArray(String[][] array) { //складывает двухмерный массив в одномерный, перечисляя элементы в квадратных скобках
 		if (array == null) return null;
 		String result[] = new String[array.length];
 		for (int i = 0; i < array.length; i++) {
 			if (array[i] == null) continue;
 			String line = "['" + array[i][0] + '\'';
-			for (int n = 1; n < array[i][n].length; i++) {
+			for (int n = 1; n < array[i].length; n++) {
 				if (array[i][n] == null) continue;
 				line += ", '" + array[i][n] + '\'';
 			}
