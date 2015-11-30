@@ -112,12 +112,18 @@ public class EasyLogger { //класс для вывода сообщений в
 		 */
 		public void log(String str) {
 			if (file != null && str != null && fsend) {
+				BufferedWriter writer = null;
 				try {
-					BufferedWriter writer = new BufferedWriter(new FileWriter(file, true));
+					writer = new BufferedWriter(new FileWriter(file, true));
 					writer.write(str);
 					writer.newLine();
-					writer.close();
-				} catch(Exception e) {e.printStackTrace();}
+				} catch(Exception e) {e.printStackTrace();} finally {
+					if (writer != null) {
+						try {
+							writer.close();
+						} catch(Exception e) {e.printStackTrace();}
+					}
+				}
 			}
 		}
 		

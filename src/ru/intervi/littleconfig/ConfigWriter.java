@@ -85,14 +85,20 @@ public class ConfigWriter { //запись и изменение конфига
 	
 	private void writeFile() { //запись массива file
 		if (set && file != null & patch != null) {
+			BufferedWriter write = null;
 			try { //запись массива
-				BufferedWriter write = new BufferedWriter(new FileWriter(patch));
+				write = new BufferedWriter(new FileWriter(patch));
 				for (int i = 0; i < file.length; i++) {
 					write.write(file[i]);
 					write.newLine();
 				}
-				write.close();
-			} catch (Exception e) {e.printStackTrace();}
+			} catch (Exception e) {e.printStackTrace();} finally {
+				if (write != null) {
+					try {
+						write.close();
+					} catch(Exception e) {e.printStackTrace();}
+				}
+			}
 		} else Log.warn("ConfigWriter: cannot write file, config file not set");
 	}
 	

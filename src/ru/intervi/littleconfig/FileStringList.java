@@ -74,8 +74,9 @@ public class FileStringList { //класс-основа для создания 
 	 */
 	public void write(String file) { //запись файла
 		if (!list.isEmpty()) {
+			BufferedWriter writer = null;
 			try {
-				BufferedWriter writer = new BufferedWriter(new FileWriter(file));
+				writer = new BufferedWriter(new FileWriter(file));
 				Iterator<String> iter = list.iterator();
 				while(iter.hasNext()) {
 					String line = iter.next();
@@ -84,8 +85,13 @@ public class FileStringList { //класс-основа для создания 
 						writer.newLine();
 					}
 				}
-				writer.close();
-			} catch (Exception e) {e.printStackTrace();}
+			} catch (Exception e) {e.printStackTrace();} finally {
+				if (writer != null) {
+					try {
+						writer.close();
+					} catch(Exception e) {e.printStackTrace();}
+				}
+			}
 		} else Log.warn("FileStringList: empty list " + file);
 	}
 	
