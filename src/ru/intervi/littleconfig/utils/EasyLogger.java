@@ -4,6 +4,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.io.File;
 import java.io.FileWriter;
+import java.io.BufferedWriter;
 
 /**
  * простой логгер для вывода сообщений в консоль и записи в файл
@@ -112,8 +113,9 @@ public class EasyLogger { //класс для вывода сообщений в
 		public void log(String str) {
 			if (file != null && str != null && fsend) {
 				try {
-					FileWriter writer = new FileWriter(file, true);
-					writer.write((str + '\n'));
+					BufferedWriter writer = new BufferedWriter(new FileWriter(file, true));
+					writer.write(str);
+					writer.newLine();
 					writer.close();
 				} catch(Exception e) {e.printStackTrace();}
 			}
