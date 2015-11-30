@@ -70,6 +70,9 @@ public class EasyLogger { //класс для вывода сообщений в
 	 */
 	public void setDateFormat(String f) {d = new SimpleDateFormat(f);} //изменить форматирование даты
 	
+	/**
+	 * класс с методами для записи сообщений в файловый лог
+	 */
 	public class ToFile {
 		private File file = null;
 		
