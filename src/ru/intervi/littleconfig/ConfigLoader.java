@@ -466,7 +466,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	 * получение всего конфига
 	 * @return конфиг в виде массива строк
 	 */
-	public String[] getAll() { //получение всего конфига массивом строк
+	public final String[] getAll() { //получение всего конфига массивом строк
 		if (get & file != null) return file; else {
 			Log.warn("ConfigLoader getAll: failed, returning null");
 			return null;

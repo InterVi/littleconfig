@@ -131,7 +131,7 @@ public class FileStringList { //класс-основа для создания 
 	 * удалась ли загрузка конфига
 	 * @return true если да; false если нет
 	 */
-	public boolean isLoad() { //был ли загружен конфиг
+	public final boolean isLoad() { //был ли загружен конфиг
 		return load;
 	}
 }
