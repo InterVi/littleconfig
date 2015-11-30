@@ -294,13 +294,18 @@ public class ConfigWriter { //запись и изменение конфига
 						newfile.add(section + ":");
 						newfile.add("  " + name + ": " + value);
 					} else if ((sec + loader.getSectionRealLength(section)) == (file.length-1)) { //если нужно добавить в старую, и она в конце конфига
-						newfile.add("  " + name + ": " + value);
+						int p = loader.Methods.getProbels(file[sec]);
+						String prob = "  ";
+						for (int i = 0; i <= p; i++) prob += ' ';
+						newfile.add(prob + name + ": " + value);
 					} else { //если позиция плавающая
 						newfile.clear();
-						for (int i = 0; i < sec; i++) newfile.add(file[i]);
-						for (int i = sec; i <= (sec + loader.getSectionRealLength(section)) & i < file.length; i++) newfile.add(file[i]);
-						newfile.add("  " + name + ": " + value);
-						for (int i = (sec + loader.getSectionRealLength(section)+1); i < file.length; i++) newfile.add(file[i]);
+						for (int i = 0; i <= (sec + loader.getSectionRealLength(section)) & i < file.length; i++) newfile.add(file[i]);
+						int p = loader.Methods.getProbels(file[sec]);
+						String prob = "  ";
+						for (int i = 0; i <= p; i++) prob += ' ';
+						newfile.add(prob + name + ": " + value);
+						for (int i = (sec + loader.getSectionRealLength(section) + 1); i < file.length; i++) newfile.add(file[i]);
 					}
 					file = new String[newfile.size()];
 					for (int i = 0; i < file.length; i++) file[i] = newfile.get(i);
@@ -324,7 +329,7 @@ public class ConfigWriter { //запись и изменение конфига
 	 */
 	public void setArrayInSection(String name, String value[], boolean skobka, String section) { //запись массива в секцию
 		if (set && patch != null) {
-			if (!neew) {
+			if (!neew) { //если редактируется старый конфиг
 				ConfigLoader loader = new ConfigLoader();
 				loader.fakeLoad(file);
 				Log.offLog();
@@ -336,48 +341,90 @@ public class ConfigWriter { //запись и изменение конфига
 					int sec = loader.Methods.getIndexSection(section);
 					if (sec == -1) { //если создается новая секция
 						newfile.add(section + ":");
-						if (!skobka) newfile.add("  " + name + ":"); else newfile.add("  " + name + ": []");
-						if (!skobka) newfile.add("  - process write");
-					} else if (sec + loader.getSectionRealLength(section) == file.length-1) { //если нужно добавить в старую, и она в конце конфига
-						if (!skobka) newfile.add("  " + name + ":"); else newfile.add("  " + name + ": []");
-						if (!skobka) newfile.add("  - process write");
+						if (skobka) { //если нужно создать массив в скобках
+							String add = "  " + name + ": [" + value[0];
+							for (int i = 1; i < value.length; i++) {
+								if (value[i] == null) continue;
+								add += ", " + value[i];
+							}
+							add += ']';
+							newfile.add(add);
+						} else { //если нужно создать массив через тире
+							newfile.add(("  " + name + ":"));
+							for (int i = 0; i < value.length; i++) {
+								if (value[i] == null) continue;
+								newfile.add(("  - " + value[i]));
+							}
+						}
+					} else if ((sec + loader.getSectionRealLength(section)) == (file.length-1)) { //если нужно добавить в старую, и она в конце конфига
+						int p = loader.Methods.getProbels(file[sec]);
+						String prob = "  ";
+						for (int i = 0; i <= p; i++) prob += ' ';
+						if (skobka) {
+							String add = prob + name + ": [" + value[0];
+							for (int i = 1; i < value.length; i++) {
+								if (value[i] == null) continue;
+								add += ", " + value[i];
+							}
+							add += ']';
+							newfile.add(add);
+						} else {
+							newfile.add((prob + name + ":"));
+							for (int i = 0; i < value.length; i++) {
+								if (value[i] == null) continue;
+								newfile.add((prob + "- " + value[i]));
+							}
+						}
 					} else { //если позиция плавающая
 						newfile.clear();
-						for (int i = 0; i < sec; i++) newfile.add(file[i]);
-						for (int i = sec; i <= sec + loader.getSectionRealLength(section) & i < file.length; i++) newfile.add(file[i]);
-						if (!skobka) newfile.add("  " + name + ":"); else newfile.add("  " + name + ": []");
-						if (!skobka) newfile.add("  - process write");
-						for (int i = sec + loader.getSectionRealLength(section) + 1; i < file.length; i++) newfile.add(file[i]);
+						for (int i = 0; i <= (sec + loader.getSectionRealLength(section)) & i < file.length; i++) newfile.add(file[i]);
+						int p = loader.Methods.getProbels(file[sec]);
+						String prob = "  ";
+						for (int i = 0; i <= p; i++) prob += ' ';
+						if (skobka) {
+							String add = prob + name + ": [" + value[0];
+							for (int i = 1; i < value.length; i++) {
+								if (value[i] == null) continue;
+								add += ", " + value[i];
+							}
+							add += ']';
+							newfile.add(add);
+						} else {
+							newfile.add((prob + name + ":"));
+							for (int i = 0; i < value.length; i++) {
+								if (value[i] == null) continue;
+								newfile.add((prob + "- " + value[i]));
+							}
+						}
+						for (int i = (sec + loader.getSectionRealLength(section) + 1); i < file.length; i++) newfile.add(file[i]);
 					}
 					file = new String[newfile.size()];
 					for (int i = 0; i < file.length; i++) file[i] = newfile.get(i);
-					loader.fakeLoad(file);
-					index = loader.Methods.getIndexInSection(section, name);
-					setArray(name, value, skobka, index);
 				}
-			} else {
+			} else { //если создается новый конфиг
 				if (skobka) {
 					file = new String[2];
 					file[0] = section + ":";
-					String send = "  " + name + ": [ " + value[0];
+					String send = "  " + name + ": [" + value[0];
 					for (int i = 1; i < value.length; i++) { //парсим в строку
+						if (value[i] == null) continue;
 						send += ", " + value[i]; 
 					}
-					send += " ]";
+					send += ']';
 					file[1] = send;
-					writeFile();
 					neew = false;
 				} else {
-					file = new String[value.length + 2];
+					file = new String[(value.length + 2)];
 					file[0] = section + ":";
 					file[1] = "  " + name + ":";
 					for (int i = 2; i < file.length; i++) {
-						file[i] = "  - " + value[i-2];
+						if (value[(i-2)] == null) continue;
+						file[i] = "  - " + value[(i-2)];
 					}
-					writeFile();
 					neew = false;
 				}
 			}
+			writeFile();
 		} else Log.info("ConfigWriter: error write array " + name + " in section " + section + ", config file not set");
 	}
 	
@@ -390,7 +437,7 @@ public class ConfigWriter { //запись и изменение конфига
 				if (index > -1) {
 					ArrayList<String> newfile = new ArrayList<String>();
 					for (int i = 0; i < index; i++) newfile.add(file[i]);
-					for (int i = index+1; i < file.length; i++) newfile.add(file[i]);
+					for (int i = (index+1); i < file.length; i++) newfile.add(file[i]);
 					file = new String[newfile.size()];
 					for (int i = 0; i < file.length; i++) file[i] = newfile.get(i);
 					writeFile();
@@ -421,7 +468,7 @@ public class ConfigWriter { //запись и изменение конфига
 						int leng = loader.Methods.getStringArray(index).length;
 						ArrayList<String> newfile = new ArrayList<String>();
 						for (int i = 0; i < index; i++) newfile.add(file[i]);
-						for (int i = index+leng+1; i < file.length; i++) newfile.add(file[i]);
+						for (int i = (index+leng+1); i < file.length; i++) newfile.add(file[i]);
 						file = new String[newfile.size()];
 						for (int i = 0; i < file.length; i++) file[i] = newfile.get(i);
 						writeFile();
@@ -489,7 +536,7 @@ public class ConfigWriter { //запись и изменение конфига
 					int leng = loader.getSectionRealLength(section);
 					ArrayList<String> newfile = new ArrayList<String>();
 					for (int i = 0; i < index; i++) newfile.add(file[i]);
-					for (int i = index+leng+1; i < file.length; i++) newfile.add(file[i]);
+					for (int i = (index+leng+1); i < file.length; i++) newfile.add(file[i]);
 					file = new String[newfile.size()];
 					for (int i = 0; i < file.length; i++) file[i] = newfile.get(i);
 					writeFile();
@@ -523,7 +570,7 @@ public class ConfigWriter { //запись и изменение конфига
 		 * @param value значение
 		 * @param index индекс в конфиге
 		 */
-		public void SetOption(String name, String value, int index) { //установить опцию по индексу
+		public void setOption(String name, String value, int index) { //установить опцию по индексу
 			setOption(name, value, index);
 		}
 		/**
@@ -533,7 +580,7 @@ public class ConfigWriter { //запись и изменение конфига
 		 * @param skobka перечислить ли значения через запятую в квадратных скобках или через перевод строки и тире
 		 * @param index индекс в конфиге
 		 */
-		public void SetArray(String name, String[] value, boolean skobka, int index) { //установить массив по индексу
+		public void setArray(String name, String[] value, boolean skobka, int index) { //установить массив по индексу
 			setArray(name, value, skobka, index);
 		}
 		/**
@@ -541,7 +588,7 @@ public class ConfigWriter { //запись и изменение конфига
 		 * @param name имя опции
 		 * @param index индекс в конфиге
 		 */
-		public void DelOption(String name, int index) { //удалить опцию по индексу
+		public void delOption(String name, int index) { //удалить опцию по индексу
 			delOption(name, index);
 		}
 		/**
@@ -549,7 +596,7 @@ public class ConfigWriter { //запись и изменение конфига
 		 * @param name имя переменной с массивом
 		 * @param index индекс в конфиге
 		 */
-		public void DelArray(String name, int index) { //удалить массив по индексу
+		public void delArray(String name, int index) { //удалить массив по индексу
 			delArray(name, index);
 		}
 		/**

@@ -10,7 +10,7 @@ public class Version { //информация о библиотеке
 	/**
 	 * версия библиотееки
 	 */
-	public static final String version = "0.1.2";
+	public static final String version = "0.1.3";
 	/**
 	 * автор
 	 */
