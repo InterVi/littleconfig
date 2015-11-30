@@ -46,14 +46,14 @@ public class ConfigWriter { //запись и изменение конфига
 	public boolean setConfig(String path) { //установка конфига
 		boolean result = false;
 		if (path == null) {
-			Log.info("ConfigWriter setConfig(String path): null path");
+			Log.warn("ConfigWriter setConfig(String path): null path");
 			return result;
 		}
 		File f = new File(path);
 		result = f.isFile();
 		if (!result) { //создаем конфиг, если его нет
 			try {
-				if (!f.createNewFile()) Log.info("ConfigWriter: cannot create " + path); else {
+				if (!f.createNewFile()) Log.warn("ConfigWriter: cannot create " + path); else {
 					set = true;
 					patch = path;
 					neew = true;
@@ -77,7 +77,7 @@ public class ConfigWriter { //запись и изменение конфига
 	 */
 	public boolean setConfig(File path) { //установка конфига
 		if (path == null) {
-			Log.info("ConfigWriter setConfig(File path): null path");
+			Log.warn("ConfigWriter setConfig(File path): null path");
 			return false;
 		}
 		return setConfig(path.getAbsolutePath());
@@ -93,12 +93,12 @@ public class ConfigWriter { //запись и изменение конфига
 				}
 				write.close();
 			} catch (Exception e) {e.printStackTrace();}
-		} else Log.info("ConfigWriter: cannot write file, config file not set");
+		} else Log.warn("ConfigWriter: cannot write file, config file not set");
 	}
 	
 	private void setOption(String name, String value, int ind) { //запись значения переменной
 		if (name == null || value == null) {
-			Log.info("ConfigWriter setOption: null name or null value");
+			Log.warn("ConfigWriter setOption: null name or null value");
 			return;
 		}
 		if (set && patch != null) {
@@ -128,9 +128,9 @@ public class ConfigWriter { //запись и изменение конфига
 						for (int i = 0; i < file.length; i++) file[i] = newfile.get(i);
 						writeFile();
 					}
-				} else Log.info("ConfigWriter: cannot write var " + name + ", var not found");
-			} else Log.info("ConfigWriter: error write var " + name + ", config file not set");
-		} else Log.info("ConfigWriter: error write var " + name + ", config file not set");
+				} else Log.warn("ConfigWriter: cannot write var " + name + ", var not found");
+			} else Log.warn("ConfigWriter: error write var " + name + ", config file not set");
+		} else Log.warn("ConfigWriter: error write var " + name + ", config file not set");
 	}
 	
 	/**
@@ -144,7 +144,7 @@ public class ConfigWriter { //запись и изменение конфига
 	
 	private void setArray(String name, String[] value, boolean skobka, int ind) { //запись значения массива
 		if (name == null || value == null) {
-			Log.info("ConfigWriter setArray: null name or null value");
+			Log.warn("ConfigWriter setArray: null name or null value");
 			return;
 		}
 		if (set && patch != null) {
@@ -259,7 +259,7 @@ public class ConfigWriter { //запись и изменение конфига
 				}
 			}
 			writeFile();
-		} else Log.info("ConfigWriter: error write array " + name + ", config file not set");
+		} else Log.warn("ConfigWriter: error write array " + name + ", config file not set");
 	}
 	
 	/**
@@ -317,7 +317,7 @@ public class ConfigWriter { //запись и изменение конфига
 				neew = false;
 			}
 			writeFile();
-		} else Log.info("ConfigWriter: error write var " + name + " in section " + section + ", config file not set");
+		} else Log.warn("ConfigWriter: error write var " + name + " in section " + section + ", config file not set");
 	}
 	
 	/**
@@ -425,7 +425,7 @@ public class ConfigWriter { //запись и изменение конфига
 				}
 			}
 			writeFile();
-		} else Log.info("ConfigWriter: error write array " + name + " in section " + section + ", config file not set");
+		} else Log.warn("ConfigWriter: error write array " + name + " in section " + section + ", config file not set");
 	}
 	
 	private void delOption(String name, int ind) { //удаление опции из конфига
@@ -441,9 +441,9 @@ public class ConfigWriter { //запись и изменение конфига
 					file = new String[newfile.size()];
 					for (int i = 0; i < file.length; i++) file[i] = newfile.get(i);
 					writeFile();
-				} else Log.info("ConfigWriter: error delete var " + name + ", var not found");
-			} else Log.info("ConfigWriter: error delete var " + name + ", config file not found");
-		} else Log.info("ConfigWriter: error delete var " + name + ", config file not set");
+				} else Log.warn("ConfigWriter: error delete var " + name + ", var not found");
+			} else Log.warn("ConfigWriter: error delete var " + name + ", config file not found");
+		} else Log.warn("ConfigWriter: error delete var " + name + ", config file not set");
 	}
 	
 	/**
@@ -473,9 +473,9 @@ public class ConfigWriter { //запись и изменение конфига
 						for (int i = 0; i < file.length; i++) file[i] = newfile.get(i);
 						writeFile();
 					}
-				} else Log.info("ConfigWriter: error delete array " + name + ", array not found");
-			} else Log.info("ConfigWriter: error delete array " + name + ", config file not found");
-		} else Log.info("ConfigWriter: error delete array " + name + ", config file not set");
+				} else Log.warn("ConfigWriter: error delete array " + name + ", array not found");
+			} else Log.warn("ConfigWriter: error delete array " + name + ", config file not found");
+		} else Log.warn("ConfigWriter: error delete array " + name + ", config file not set");
 	}
 	
 	/**
@@ -499,9 +499,9 @@ public class ConfigWriter { //запись и изменение конфига
 				int index = loader.Methods.getIndexInSection(section, name);
 				if (index > -1) {
 					delOption(name, index);
-				} else Log.info("ConfigWriter: error delete var " + name + " from section " + section + ", var not found");
-			} else Log.info("ConfigWriter: error delete var " + name + " from section " + section + ", config file not found");
-		} else Log.info("ConfigWriter: error delete var " + name + " from section " + section + ", config file not set");
+				} else Log.warn("ConfigWriter: error delete var " + name + " from section " + section + ", var not found");
+			} else Log.warn("ConfigWriter: error delete var " + name + " from section " + section + ", config file not found");
+		} else Log.warn("ConfigWriter: error delete var " + name + " from section " + section + ", config file not set");
 	}
 	
 	/**
@@ -517,9 +517,9 @@ public class ConfigWriter { //запись и изменение конфига
 				int index = loader.Methods.getIndexInSection(section, name);
 				if (index > -1) {
 					delArray(name, index);
-				} else Log.info("ConfigWriter: error delete array " + name + " from section " + section + ", array not found");
-			} else Log.info("ConfigWriter: error delete array " + name + " from section " + section + ", config file not found");
-		} else Log.info("ConfigWriter: error delete array " + name + " from section " + section + ", config file not set");
+				} else Log.warn("ConfigWriter: error delete array " + name + " from section " + section + ", array not found");
+			} else Log.warn("ConfigWriter: error delete array " + name + " from section " + section + ", config file not found");
+		} else Log.warn("ConfigWriter: error delete array " + name + " from section " + section + ", config file not set");
 	}
 	
 	/**
@@ -540,9 +540,9 @@ public class ConfigWriter { //запись и изменение конфига
 					file = new String[newfile.size()];
 					for (int i = 0; i < file.length; i++) file[i] = newfile.get(i);
 					writeFile();
-				} else Log.info("ConfigWriter: error delete section " + section + ", section not found");
-			} else Log.info("ConfigWriter: error delete section " + section + ", config file not found");
-		} else Log.info("ConfigWriter: error delete section " + section + ", config file not set");
+				} else Log.warn("ConfigWriter: error delete section " + section + ", section not found");
+			} else Log.warn("ConfigWriter: error delete section " + section + ", config file not found");
+		} else Log.warn("ConfigWriter: error delete section " + section + ", config file not set");
 	}
 	
 	/**
@@ -554,9 +554,9 @@ public class ConfigWriter { //запись и изменение конфига
 		if (set && patch != null) {
 			if (!neew) {
 				File conf = new File(patch);
-				if (conf.isFile()) result = conf.delete(); else Log.info("ConfigWriter: error delete config file, not found");
-			} else Log.info("ConfigWriter: error delete config file, not found");
-		} else Log.info("ConfigWriter: error delete config file, not set");
+				if (conf.isFile()) result = conf.delete(); else Log.warn("ConfigWriter: error delete config file, not found");
+			} else Log.warn("ConfigWriter: error delete config file, not found");
+		} else Log.warn("ConfigWriter: error delete config file, not set");
 		return result;
 	}
 	
@@ -623,6 +623,6 @@ public class ConfigWriter { //запись и изменение конфига
 					setConfig(patch); //обновляем инфу
 				}
 			}
-		} else Log.info("ConfigWriter: error write array, config not set");
+		} else Log.warn("ConfigWriter: error write array, config not set");
 	}
 }

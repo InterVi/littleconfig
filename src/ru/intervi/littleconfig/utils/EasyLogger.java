@@ -12,11 +12,19 @@ public class EasyLogger { //класс для вывода сообщений в
 	private SimpleDateFormat d = new SimpleDateFormat("YYYY-MM-DD/HH:mm:ss");
 	
 	/**
-	 * вывод сообщения в консоль
+	 * вывод инофрмационного сообщения в консоль
 	 * @param text сообщение
 	 */
 	public void info(String text) {
-		if (send) System.out.println("[" + d.format(new Date()) + "] " + prefix + " " + text);
+		if (send) System.out.println("[INFO] [" + d.format(new Date()) + "] " + prefix + ' ' + text);
+	}
+	
+	/**
+	 * вывод предупредительного сообщения в консоль
+	 * @param text сообщение
+	 */
+	public void warn(String text) {
+		if (send) System.out.println("[WARN] [" + d.format(new Date()) + "] " + prefix + ' ' + text);
 	}
 	
 	/**

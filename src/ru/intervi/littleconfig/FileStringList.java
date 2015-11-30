@@ -55,7 +55,7 @@ public class FileStringList { //класс-основа для создания 
 				load = true;
 			} catch (Exception e) {e.printStackTrace(); load = false;}
 		} else {
-			Log.info("FileStringList: file " + file + " not found");
+			Log.warn("FileStringList: file " + file + " not found");
 			load = false;
 		}
 	}
@@ -86,7 +86,7 @@ public class FileStringList { //класс-основа для создания 
 				}
 				writer.close();
 			} catch (Exception e) {e.printStackTrace();}
-		} else Log.info("FileStringList: empty list " + file);
+		} else Log.warn("FileStringList: empty list " + file);
 	}
 	
 	/**
@@ -106,7 +106,7 @@ public class FileStringList { //класс-основа для создания 
 		if (!list.isEmpty()) {
 			result = new String[list.size()];
 			for (int i = 0; i < list.size(); i++) result[i] = list.get(i);
-		} else Log.info("FileStringList: empty list");
+		} else Log.warn("FileStringList: empty list");
 		return result;
 	}
 	
