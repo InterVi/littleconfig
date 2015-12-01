@@ -120,9 +120,9 @@ public class FileStringList { //класс-основа для создания 
 	 * установить список
 	 * @param line список в виде String[]
 	 */
-	public void setList(String line[]) { //установить список
+	public void setList(String lines[]) { //установить список
 		list.clear();
-		for (int i = 0; i < line.length; i++) list.add(line[i]);
+		for (int i = 0; i < lines.length; i++) list.add(lines[i]);
 	}
 	
 	/**
@@ -134,7 +134,7 @@ public class FileStringList { //класс-основа для создания 
 	}
 	
 	/**
-	 * удалась ли загрузка конфига
+	 * удалась ли загрузка файла
 	 * @return true если да; false если нет
 	 */
 	public final boolean isLoad() { //был ли загружен конфиг

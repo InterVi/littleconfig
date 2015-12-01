@@ -752,6 +752,26 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		return getBooleanArray(getIndexNoSection(name));
 	}
 	
+	/**
+	 * получить названия переменных из всего конфига (не включает названия секций)
+	 * @return названия переменных в виде массива строк (null, если ничего не найдено)
+	 */
+	public String[] getOptionNames() { //получение названия переменных из всего конфига
+		String result[] = null;
+		if (get & file != null) {
+			ArrayList<String> list = new ArrayList<String>();
+			for (int i = 0; i < file.length; i++) { //парсинг имени всех опций в лист
+				if (isSet(i) & !isSection(i)) list.add(clearStr(file[i]).name);
+				else if (isSection(i)) i += getSectionRealLength(i); //секции пропускаем
+			}
+			if (!list.isEmpty()) { //заполнение результатов
+				result = new String[list.size()];
+				for (int i = 0; i < list.size(); i++) result[i] = list.get(i);
+			}
+		} else Log.warn("ConfigLoader getConfigVars: failed, config not loaded");
+		return result;
+	}
+	
 	private boolean isSet(int index) { //проверка, прописана ли переменная (по индексу)
 		boolean result = false;
 		if (index < 0) {Log.warn("ConfigLoader isSet: failed, index < 0"); return result;}
@@ -882,7 +902,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	}
 	
 	/**
-	 * получить названия переменных в данной секции (не проверяются методом isSet)
+	 * получить названия переменных в данной секции (не проверяются методом isSet, не включает названия секций)
 	 * @param name имя секции
 	 * @return названия переменных в виде массива строк (null, если ничего не найдено)
 	 */
