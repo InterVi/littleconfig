@@ -88,7 +88,7 @@ public class EasyLogger { //класс для вывода сообщений в
 	
 	private boolean send = true;
 	private String prefix = "[littleconfig]";
-	private SimpleDateFormat d = new SimpleDateFormat("YYYY-MM-DD/HH:mm:ss");
+	private SimpleDateFormat d = new SimpleDateFormat("YYYY-MM-dd/HH:mm:ss");
 	private String info = "[INFO]";
 	private String warn = "[WARN]";
 	
@@ -138,7 +138,7 @@ public class EasyLogger { //класс для вывода сообщений в
 	public void setPrefix(String p) {prefix = p;} //поменять префикс
 	
 	/**
-	 * получить форматирование даты, стандартное: "YYYY-MM-DD/HH:mm:ss"
+	 * получить форматирование даты, стандартное: "YYYY-MM-dd/HH:mm:ss"
 	 * @return форматирование даты
 	 */
 	public final String getDateFormat() {return d.toPattern();} //получить форматирование даты

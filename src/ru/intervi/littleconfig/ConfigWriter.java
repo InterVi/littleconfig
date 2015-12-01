@@ -118,9 +118,9 @@ public class ConfigWriter { //запись и изменение конфига
 					ConfigLoader loader = new ConfigLoader();
 					loader.fakeLoad(file);
 					int index = -1;
-					if (ind == -1) index = loader.Methods.getIndexNoSection(name); else index = ind;
+					if (ind == -1) index = loader.Methods.recIndexNoSection(name); else index = ind;
 					if (index > -1) { //перезаписываем переменную, если она есть
-						ClearResult r = loader.Methods.clearStr(file[index]);
+						ClearResult r = loader.Methods.clearString(file[index]);
 						if (r.broken) return; //страховка
 						String rep = r.name + ": " + value; //подменяем значение
 						if (r.com != null) rep += " #" + r.com; //возвращаем комментарий, если он был
@@ -178,7 +178,7 @@ public class ConfigWriter { //запись и изменение конфига
 				loader.fakeLoad(file);
 				int index = ind;
 				Log.offLog();
-				if (index == -1) index = loader.Methods.getIndexNoSection(name);
+				if (index == -1) index = loader.Methods.recIndexNoSection(name);
 				Log.onLog();
 				if (index > -1) { //если нужно заменить значение у старого массива
 					ArrayList<String> one = new ArrayList<String>(); //содержимое до массива
@@ -186,8 +186,8 @@ public class ConfigWriter { //запись и изменение конфига
 					ArrayList<String> paste = new ArrayList<String>(); //что вставить вместо него
 					for (int i = 0; i < index; i++) one.add(file[i]);
 					
-					IsArray ia = loader.Methods.isArray(index);
-					int p = loader.Methods.getProbels(file[index]);
+					IsArray ia = loader.Methods.checkArray(index);
+					int p = loader.Methods.recProbels(file[index]);
 					String pr = "";
 					for (int i = 0; i <= p; i++) pr += ' ';
 					if (ia.skobka & !skobka) { //замена однострочного массива на многострочный
@@ -290,24 +290,24 @@ public class ConfigWriter { //запись и изменение конфига
 				ConfigLoader loader = new ConfigLoader();
 				loader.fakeLoad(file);
 				Log.offLog();
-				int index = loader.Methods.getIndexInSection(section, name);
+				int index = loader.Methods.recIndexInSection(section, name);
 				Log.onLog();
 				if (index != -1) setOption(name, value, index); else { //если опции нет в конфиге (ее не надо заменять)
 					ArrayList<String> newfile = new ArrayList<String>(); //запись секции, если ее нет в конфиге
 					for (int i = 0; i < file.length; i++) newfile.add(file[i]);
-					int sec = loader.Methods.getIndexSection(section);
+					int sec = loader.Methods.recIndexSection(section);
 					if (sec == -1) { //если создается новая секция
 						newfile.add(section + ":");
 						newfile.add("  " + name + ": " + value);
 					} else if ((sec + loader.getSectionRealLength(section)) == (file.length-1)) { //если нужно добавить в старую, и она в конце конфига
-						int p = loader.Methods.getProbels(file[sec]);
+						int p = loader.Methods.recProbels(file[sec]);
 						String prob = "  ";
 						for (int i = 0; i <= p; i++) prob += ' ';
 						newfile.add(prob + name + ": " + value);
 					} else { //если позиция плавающая
 						newfile.clear();
 						for (int i = 0; i <= (sec + loader.getSectionRealLength(section)) & i < file.length; i++) newfile.add(file[i]);
-						int p = loader.Methods.getProbels(file[sec]);
+						int p = loader.Methods.recProbels(file[sec]);
 						String prob = "  ";
 						for (int i = 0; i <= p; i++) prob += ' ';
 						newfile.add(prob + name + ": " + value);
@@ -339,12 +339,12 @@ public class ConfigWriter { //запись и изменение конфига
 				ConfigLoader loader = new ConfigLoader();
 				loader.fakeLoad(file);
 				Log.offLog();
-				int index = loader.Methods.getIndexInSection(section, name);
+				int index = loader.Methods.recIndexInSection(section, name);
 				Log.onLog();
 				if (index != -1) setArray(name, value, skobka, index); else {
 					ArrayList<String> newfile = new ArrayList<String>(); //запись массива, если его нет в конфиге
 					for (int i = 0; i < file.length; i++) newfile.add(file[i]);
-					int sec = loader.Methods.getIndexSection(section);
+					int sec = loader.Methods.recIndexSection(section);
 					if (sec == -1) { //если создается новая секция
 						newfile.add(section + ":");
 						if (skobka) { //если нужно создать массив в скобках
@@ -363,7 +363,7 @@ public class ConfigWriter { //запись и изменение конфига
 							}
 						}
 					} else if ((sec + loader.getSectionRealLength(section)) == (file.length-1)) { //если нужно добавить в старую, и она в конце конфига
-						int p = loader.Methods.getProbels(file[sec]);
+						int p = loader.Methods.recProbels(file[sec]);
 						String prob = "  ";
 						for (int i = 0; i <= p; i++) prob += ' ';
 						if (skobka) {
@@ -384,7 +384,7 @@ public class ConfigWriter { //запись и изменение конфига
 					} else { //если позиция плавающая
 						newfile.clear();
 						for (int i = 0; i <= (sec + loader.getSectionRealLength(section)) & i < file.length; i++) newfile.add(file[i]);
-						int p = loader.Methods.getProbels(file[sec]);
+						int p = loader.Methods.recProbels(file[sec]);
 						String prob = "  ";
 						for (int i = 0; i <= p; i++) prob += ' ';
 						if (skobka) {
@@ -439,7 +439,7 @@ public class ConfigWriter { //запись и изменение конфига
 			if (!neew) {
 				ConfigLoader loader = new ConfigLoader();
 				loader.fakeLoad(file);
-				int index = ind; if (index == -1) index = loader.Methods.getIndexNoSection(name);
+				int index = ind; if (index == -1) index = loader.Methods.recIndexNoSection(name);
 				if (index > -1) {
 					ArrayList<String> newfile = new ArrayList<String>();
 					for (int i = 0; i < index; i++) newfile.add(file[i]);
@@ -465,13 +465,13 @@ public class ConfigWriter { //запись и изменение конфига
 			if (!neew) {
 				ConfigLoader loader = new ConfigLoader();
 				loader.fakeLoad(file);
-				int index = ind; if (index == -1) index = loader.Methods.getIndexNoSection(name);
+				int index = ind; if (index == -1) index = loader.Methods.recIndexNoSection(name);
 				if (index > -1) {
-					boolean skobka = loader.Methods.isArray(index).skobka;
+					boolean skobka = loader.Methods.checkArray(index).skobka;
 					if (skobka) {
 						delOption(name, index);
 					} else {
-						int leng = loader.Methods.getStringArray(index).length;
+						int leng = loader.Methods.recStringArray(index).length;
 						ArrayList<String> newfile = new ArrayList<String>();
 						for (int i = 0; i < index; i++) newfile.add(file[i]);
 						for (int i = (index+leng+1); i < file.length; i++) newfile.add(file[i]);
@@ -502,7 +502,7 @@ public class ConfigWriter { //запись и изменение конфига
 			if (!neew) {
 				ConfigLoader loader = new ConfigLoader();
 				loader.fakeLoad(file);
-				int index = loader.Methods.getIndexInSection(section, name);
+				int index = loader.Methods.recIndexInSection(section, name);
 				if (index > -1) {
 					delOption(name, index);
 				} else Log.warn("ConfigWriter: error delete var " + name + " from section " + section + ", var not found");
@@ -520,7 +520,7 @@ public class ConfigWriter { //запись и изменение конфига
 			if (!neew) {
 				ConfigLoader loader = new ConfigLoader();
 				loader.fakeLoad(file);
-				int index = loader.Methods.getIndexInSection(section, name);
+				int index = loader.Methods.recIndexInSection(section, name);
 				if (index > -1) {
 					delArray(name, index);
 				} else Log.warn("ConfigWriter: error delete array " + name + " from section " + section + ", array not found");
@@ -537,7 +537,7 @@ public class ConfigWriter { //запись и изменение конфига
 			if (!neew) {
 				ConfigLoader loader = new ConfigLoader();
 				loader.fakeLoad(file);
-				int index = loader.Methods.getIndexSection(section);
+				int index = loader.Methods.recIndexSection(section);
 				if (index > -1) {
 					int leng = loader.getSectionRealLength(section);
 					ArrayList<String> newfile = new ArrayList<String>();
