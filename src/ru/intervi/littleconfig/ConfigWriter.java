@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 
 import ru.intervi.littleconfig.ConfigLoader.ClearResult;
-import ru.intervi.littleconfig.ConfigLoader.IsArray;
 import ru.intervi.littleconfig.utils.EasyLogger;
 
 /**
@@ -122,16 +121,18 @@ public class ConfigWriter { //запись и изменение конфига
 					if (index > -1) { //перезаписываем переменную, если она есть
 						ClearResult r = loader.Methods.clearString(file[index]);
 						if (r.broken) return; //страховка
-						String rep = r.name + ": " + value; //подменяем значение
+						String p = "";
+						int prob = loader.Methods.recProbels(file[index]);
+						for (int i = 0; i <= prob; i++) p += ' ';
+						String rep = p + r.name + ": " + value; //подменяем значение
 						if (r.com != null) rep += " #" + r.com; //возвращаем комментарий, если он был
 						file[index] = rep;
 						writeFile();
 					} else { //если нет, то добавляем ее в конфиг
-						ArrayList<String> newfile = new ArrayList<String>();
-						for (int i = 0; i < file.length; i++) newfile.add(file[i]);
-						newfile.add(name + ": " + value);
-						file = new String[newfile.size()];
-						for (int i = 0; i < file.length; i++) file[i] = newfile.get(i);
+						String rep[] = new String[(file.length+1)];
+						for (int i = 0; i < file.length; i++) rep[i] = file[i];
+						rep[(rep.length-1)] = name + ": " + value;
+						file = rep;
 						writeFile();
 					}
 				} else Log.warn("ConfigWriter: cannot write var " + name + ", var not found");
@@ -154,7 +155,7 @@ public class ConfigWriter { //запись и изменение конфига
 			return;
 		}
 		if (set && patch != null) {
-			if (neew || file != null || file.length == 0) { //есди записываем в новый конфиг
+			if (neew) { //есди записываем в новый конфиг
 				if (skobka) { //если значения в квадратных скобках
 					String send = name + ": [" + value[0];
 					for (int i = 1; i < value.length; i++) { //парсим в строку
@@ -173,33 +174,24 @@ public class ConfigWriter { //запись и изменение конфига
 					}
 				}
 				neew = false;
-			} else { //если нужно заменить значение в старом конфиге
+				writeFile();
+			} else if (file != null) { //если нужно заменить значение в старом конфиге
 				ConfigLoader loader = new ConfigLoader();
 				loader.fakeLoad(file);
-				int index = ind;
-				Log.offLog();
-				if (index == -1) index = loader.Methods.recIndexNoSection(name);
-				Log.onLog();
+				int index = -1;
+				if (ind == -1) index = loader.Methods.recIndexNoSection(name); else index = ind;
 				if (index > -1) { //если нужно заменить значение у старого массива
 					ArrayList<String> one = new ArrayList<String>(); //содержимое до массива
 					ArrayList<String> two = new ArrayList<String>(); //после
 					ArrayList<String> paste = new ArrayList<String>(); //что вставить вместо него
+					//заполнение частей до и после массива
 					for (int i = 0; i < index; i++) one.add(file[i]);
+					for (int i = (index + loader.Methods.getArrayRealLength(index)); i < file.length; i++) two.add(file[i]);
 					
-					IsArray ia = loader.Methods.checkArray(index);
 					int p = loader.Methods.recProbels(file[index]);
 					String pr = "";
 					for (int i = 0; i <= p; i++) pr += ' ';
-					if (ia.skobka & !skobka) { //замена однострочного массива на многострочный
-						for (int i = (index+1); i < file.length; i++) two.add(file[i]);
-						paste.add((pr + name + ":"));
-						for (int i = 0; i < value.length; i++) {
-							if (value[i] == null) continue;
-							paste.add((pr + "- " + value[i]));
-						}
-					} else if (!ia.skobka & skobka) { //многострочного на однострочный
-						int l = loader.Methods.getArrayRealLength(index);
-						for (int i = (index+l+1); i < file.length; i++) two.add(file[i]);
+					if (skobka) { //если новый массив в скобках
 						String add = pr + name + ": [" + value[0];
 						for (int i = 1; i < value.length; i++) {
 							if (value[i] == null) continue;
@@ -207,18 +199,7 @@ public class ConfigWriter { //запись и изменение конфига
 						}
 						add += ']';
 						paste.add(add);
-					} else if (ia.skobka & skobka) { //однострочного на однострочный
-						for (int i = (index+1); i < file.length; i++) two.add(file[i]);
-						String add = pr + name + ": [" + value[0];
-						for (int i = 1; i < value.length; i++) {
-							if (value[i] == null) continue;
-							add += ", " + value[i];
-						}
-						add += ']';
-						paste.add(add);
-					} else if (!ia.skobka & !skobka) { //многострочный на многострочный
-						int l = loader.Methods.getArrayRealLength(index);
-						for (int i = (index+l+1); i < file.length; i++) two.add(file[i]);
+					} else { //если новый массив через тире
 						paste.add((pr + name + ":"));
 						for (int i = 0; i < value.length; i++) {
 							if (value[i] == null) continue;
@@ -262,9 +243,11 @@ public class ConfigWriter { //запись и изменение конфига
 							newfile.add(("- " + value[i]));
 						}
 					}
+					file = new String[newfile.size()];
+					for (int i = 0; i < newfile.size(); i++) file[i] = newfile.get(i);
 				}
-			}
-			writeFile();
+				writeFile();
+			} else Log.warn("ConfigWriter: error write array " + name + ", config file not set");
 		} else Log.warn("ConfigWriter: error write array " + name + ", config file not set");
 	}
 	
@@ -289,9 +272,7 @@ public class ConfigWriter { //запись и изменение конфига
 			if (!neew) { //если правится старый конфиг
 				ConfigLoader loader = new ConfigLoader();
 				loader.fakeLoad(file);
-				Log.offLog();
 				int index = loader.Methods.recIndexInSection(section, name);
-				Log.onLog();
 				if (index != -1) setOption(name, value, index); else { //если опции нет в конфиге (ее не надо заменять)
 					ArrayList<String> newfile = new ArrayList<String>(); //запись секции, если ее нет в конфиге
 					for (int i = 0; i < file.length; i++) newfile.add(file[i]);
@@ -338,9 +319,7 @@ public class ConfigWriter { //запись и изменение конфига
 			if (!neew) { //если редактируется старый конфиг
 				ConfigLoader loader = new ConfigLoader();
 				loader.fakeLoad(file);
-				Log.offLog();
 				int index = loader.Methods.recIndexInSection(section, name);
-				Log.onLog();
 				if (index != -1) setArray(name, value, skobka, index); else {
 					ArrayList<String> newfile = new ArrayList<String>(); //запись массива, если его нет в конфиге
 					for (int i = 0; i < file.length; i++) newfile.add(file[i]);

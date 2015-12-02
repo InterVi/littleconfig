@@ -142,15 +142,15 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		 */
 		public String cleaned;
 		/**
-		 * комментарий
+		 * комментарий (null по умолчанию)
 		 */
 		public String com;
 		/**
-		 * содержание переменной
+		 * содержание переменной (null по умолчанию)
 		 */
 		public String content;
 		/**
-		 * имя переменной
+		 * имя переменной (null по умолчанию)
 		 */
 		public String name;
 		/**
@@ -318,10 +318,12 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		if (d > -1) {
 			if (q == -1 & q2 == -1 && q3 == -1 & q4 == -1) {
 				//если кавычек нет - вырезаем контент между двоеточием и концом строки (или комментом)
-				int ch = s.substring(d, s.length()).trim().length();
-				if (ch > 0) { //если строка кончается двоеточием - она бракованная
+				char ch[] = s.trim().toCharArray();
+				boolean ok = true; //проверка, есть ли контент между двоеточием и комментом (кроме пробелов)
+				if (ci > -1 & d < ci && Utils.trim(s.substring((d+1), ci)).length() <= 0) ok = false;
+				if (ch[(ch.length-1)] != ':' && ci == -1 | ok) { //если строка кончается двоеточием - она бракованная
 					if (ci == -1) result.content = s.substring((d+1), s.length()).trim();
-					else result.content = s.substring((d+1), s.lastIndexOf(ci)).trim();
+					else result.content = s.substring((d+1), ci).trim();
 					result.broken = false;
 				}
 			}
@@ -333,7 +335,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 				int ch = s.substring(hyp, s.length()).trim().length();
 				if (q == -1 & q3 == -1 && ch > 0) {
 					if (ci == -1) result.content = s.substring((hyp+1), s.length()).trim();
-					else result.content = s.substring((hyp+1), s.lastIndexOf(ci)).trim();
+					else result.content = s.substring((hyp+1), ci).trim();
 				}
 			}
 		}
@@ -896,7 +898,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		boolean result = false;
 		if (name == null) {Log.warn("ConfigLoader isSection: null name"); return false;}
 		if (get == true && file != null) {
-			result = isSection(getIndexSection(name));
+			if (getIndexSection(name) > -1) result = true;
 		} else Log.warn("ConfigLoader isSection(name): failed check " + name + ", config not loaded or file[i] == null");
 		return result;
 	}
@@ -1011,7 +1013,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		if (name == null | section == null) {Log.warn("ConfigLoader getIndexInSection: null name or null section"); return result;}
 		if (get & file != null) {
 			int index = getIndexSection(section);
-			if (isSection(index)) {
+			if (index > -1 && isSection(index)) {
 				int p = getProbels(file[index])+1;
 				for (int i = (index+1); i < file.length; i++) {
 					ClearResult r = clearStr(file[i]);
@@ -1374,9 +1376,9 @@ public class ConfigLoader { //чтение конфига из файла и п�
 			for (int i = 0; i < file.length; i++) file[i] = list.get(i);
 		}
 		/**
-		 * узнать реальную длинну многострочного массива в конфиге
+		 * узнать реальную длинну многострочного массива в конфиге, включая строку с названием
 		 * @param index индекс массива
-		 * @return количество строк от первого элемента до последнего
+		 * @return количество строк от первого элемента до последнего (-1 при бракованном массиве)
 		 */
 		public int getArrayRealLength(int index) { //узнать реальную длинну массива
 			int result = -1;
@@ -1384,21 +1386,21 @@ public class ConfigLoader { //чтение конфига из файла и п�
 			if (index >= file.length) {Log.warn("LoaderMethods getArrayRealLength(index): failed, index > file.length"); return result;}
 			IsArray ia = isArray(index);
 			if (ia.array) {
-				if (ia.skobka) result = 0; else {
+				if (ia.skobka) result = 1; else {
 					for (int i = (index+1); i < file.length; i++) { //узнаем конец массива
 						ClearResult r = clearStr(file[i]);
 						if (r.colon > -1) { //выход из цикла при попадании на опцию или секцию
-							result = (i-1)-(index+1);
+							result = (i-1)-(index-1);
 							break;
 						}
+						if (i == (file.length-1)) result = i-(index-1); //сохранение результата при достижении конца конфига
 					}
-					for (int i = (index+result); i > index; i--) { //вычитаем пустые строки в конце
+					for (int i = (index+result-1); i > index; i--) { //вычитаем лишние строки в конце
 						ClearResult r = clearStr(file[i]);
 						if (r.hypindex > -1) { //выход из цикла при попадании на последний элемент массива
-							result -= (i-1)-(index+1);
+							result -= (index+result-1)-i;
 							break;
 						}
-						if ((i-1) == index && result == -1) result = (file.length-1)-(index+1); //если цикл дошел до конца массива
 					}
 				}
 			}

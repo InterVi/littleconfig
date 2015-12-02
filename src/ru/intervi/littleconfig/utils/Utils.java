@@ -4,6 +4,7 @@ import java.lang.Class;
 import java.io.File;
 import java.io.InputStream;
 import java.io.FileOutputStream;
+import java.util.ArrayList;
 
 /**
  * разные полезные утилиты
@@ -36,9 +37,16 @@ public class Utils { //разные полезные методы
 	 */
 	public static String remChar(String s, char c) { //чистка от символа
 		char str[] = s.toCharArray();
-		char result[] = new char[str.length];
+		ArrayList<char[]> list = new ArrayList<char[]>();
 		for (int i = 0; i < str.length; i++) {
-			if (str[i] != c) result[i] = str[i];
+			if (str[i] != c) {
+				char add[] = {str[i]};
+				list.add(add);
+			}
+		}
+		char result[] = new char[list.size()];
+		if (!list.isEmpty()) {
+			for (int i = 0; i < list.size(); i++) result[i] = list.get(i)[0];
 		}
 		return new String(result);
 	}
