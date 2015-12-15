@@ -191,7 +191,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		ClearResult result = new ClearResult();
 		if (s == null) return result;
 		result.origin = s;
-		if (s.trim().toCharArray()[0] == '#') { //если коммент во всю строку
+		if (s.trim().charAt(0) == '#') { //если коммент во всю строку
 			result.comindex = 0;
 			result.com = s.substring(1, s.length());
 			result.fullstr = true;
@@ -764,7 +764,10 @@ public class ConfigLoader { //чтение конфига из файла и п�
 			ArrayList<String> list = new ArrayList<String>();
 			for (int i = 0; i < file.length; i++) { //парсинг имени всех опций в лист
 				if (isSet(i) & !isSection(i)) list.add(clearStr(file[i]).name);
-				else if (isSection(i)) i += getSectionRealLength(i); //секции пропускаем
+				else if (isSection(i)) {
+					i += getSectionRealLength(i)-1; //секции пропускаем
+					continue;
+				}
 			}
 			if (!list.isEmpty()) { //заполнение результатов
 				result = new String[list.size()];
@@ -852,11 +855,11 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		if (get & file != null) {
 			for (int i = 0; i < file.length; i++) {
 				if (isSection(i)) { //пропуск секций
-					i += getSectionRealLength(i)+1;
+					i += getSectionRealLength(i)-1;
 					continue;
 				}
 				ClearResult r = clearStr(file[i]);
-				if (!r.broken | isArray(i).array && r.name != null) {
+				if (!r.broken || isArray(i).array & r.name != null) {
 					if (r.name.equals(name)) {
 						result = i;
 						break;
@@ -921,7 +924,10 @@ public class ConfigLoader { //чтение конфига из файла и п�
 					ClearResult r = clearStr(file[i]);
 					if (r.empty | r.fullstr | r.name == null) continue; //пропуск не нужного
 					if (r.colon > -1 & getProbels(file[i]) < p) break; //выход из цикла, конец секции
-					if (isSection(index)) i += getSectionRealLength(i); //пропуск секций
+					if (isSection(index)) {
+						i += getSectionRealLength(i)-1; //пропуск секций
+						continue;
+					}
 					if (r.colon > -1 & r.name != null) list.add(r.name);
 				}
 			}
@@ -941,18 +947,18 @@ public class ConfigLoader { //чтение конфига из файла и п�
 					ClearResult r = clearStr(file[i]);
 					if (r.empty | r.fullstr) continue; //пропуск не нужного
 					if (p > getProbels(file[i])) { //выход из цикла и сохранение результата
-						result = (i-1)-(index+1);
+						result = (i-1)-(index-1);
 						break;
 					}
+					if ((i+1) == file.length) result = i-(index-1); //если цикл дошел до конца массива
 				}
-				if (result == -1) result = (file.length-1)-(index+1); //если цикл дошел до конца массива
 			}
 		} else Log.warn("ConfigLoader getSectionRealLength(index): failed get " + index + " config not loaded or file == null");
 		return result;
 	}
 	
 	/**
-	 * получить длинну секции (количество строк в конфиге, строка с названием секции в число не входит)
+	 * получить длинну секции (количество строк в конфиге, строка с названием секции входит в число)
 	 * @param name имя секции
 	 * @return количество строк в секции в виде int (-1, если секция не найдена либо пуста)
 	 */
@@ -974,8 +980,12 @@ public class ConfigLoader { //чтение конфига из файла и п�
 				if (r.empty | r.fullstr) continue; //пропуск лишнего
 				if (r.broken && isSection(i)) {
 					list.add(r.name);
-					i += getSectionRealLength(i); //пропуск содержимого секций
+					i += getSectionRealLength(i)-1; //пропуск содержимого секций
 				}
+			}
+			if (!list.isEmpty()) {
+				result = new String[list.size()];
+				for (int i = 0; i < list.size(); i++) result[i] = list.get(i);
 			}
 		} else Log.warn("ConfigLoader getSectionNames: failed get sections names, config not loaded or file == null");
 		return result;
@@ -999,11 +1009,13 @@ public class ConfigLoader { //чтение конфига из файла и п�
 				if (p > getProbels(file[i])) break; //выход из цикла
 				if (isSection(i)) {
 					list.add(r.name);
-					i += getSectionRealLength(i); //пропуск содержимого секций
+					i += getSectionRealLength(i)-1; //пропуск содержимого секций
 				}
 			}
-			result = new String[list.size()];
-			for (int i = 0; i < result.length; i++) result[i] = list.get(i);
+			if (!list.isEmpty()) {
+				result = new String[list.size()];
+				for (int i = 0; i < result.length; i++) result[i] = list.get(i);
+			}
 		} else Log.warn("ConfigLoader getSectionNames: failed get " + name + " config not loaded or file == null");
 		return result;
 	}

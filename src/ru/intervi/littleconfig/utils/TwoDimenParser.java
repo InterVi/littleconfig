@@ -2,6 +2,8 @@ package ru.intervi.littleconfig.utils;
 
 import java.util.ArrayList;
 
+import ru.intervi.littleconfig.ConfigLoader;
+
 /**
  * парсер двухмерных массивов
  */
@@ -34,34 +36,20 @@ public class TwoDimenParser {
 	 */
 	public static String[][] parseFromArray(String[] array) { //разворачивает одномерный массив с элементами в скобках в двухмерный массив
 		if (array == null) return null;
-		ArrayList<String[]> list = new ArrayList<String[]>(); //первичные данные
+		ArrayList<String[]> list = new ArrayList<String[]>();
 		int l = 0;
-		for (int i = 0; i < array.length; i++) { //парсинг массива
-			if (array[i] == null) continue;
-			String line = array[i].substring(1, (array[i].length()-1)); //отсекаем скобки
-			ArrayList<int[]> q = new ArrayList<int[]>(); //список кавычек
-			char c[] = line.toCharArray();
-			int f = -1;
-			for (int n = 0; n < c.length; n++) { //поиск кавычек
-				if (f == -1) { //поиск первой кавычки
-					if (c[n] == '\'') f = n;
-				} else { //поиск второй кавычки
-					if (c[n] == '\'') {
-						int add[] = {f, n};
-						q.add(add);
-					}
-				}
-			}
-			if (l < q.size()) l = q.size(); //выисление максимального размера
-			String add[] = new String[q.size()];
-			for (int n = 0; n < q.size(); n++) { //парсинг строк из списка кавычек
-				int qo[] = q.get(n);
-				add[n] = line.substring((qo[0]+1), qo[1]);
-			}
+		for (int i = 0; i < array.length; i++) {
+			ConfigLoader loader = new ConfigLoader();
+			String data[] = {"array: " + array[i]};
+			loader.fakeLoad(data); //грузим фейковый конфиг
+			String add[] = loader.getStringArray("array"); //получаем готовый массив
 			list.add(add);
+			if (l < add.length) l = add.length; //вычисление максимальной длинны
 		}
-		String result[][] = new String[array.length][l];
-		for (int i = 0; i < array.length; i++) result[i] = list.get(i); //парсинг списка в массив
-		return result;
+		if (!list.isEmpty()) { //заполнение результатов
+			String result[][] = new String[list.size()][l];
+			for (int i = 0; i < list.size(); i++) result[i] = list.get(i);
+			return result;
+		} else return null;
 	}
 }

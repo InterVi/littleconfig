@@ -280,19 +280,19 @@ public class ConfigWriter { //запись и изменение конфига
 					if (sec == -1) { //если создается новая секция
 						newfile.add(section + ":");
 						newfile.add("  " + name + ": " + value);
-					} else if ((sec + loader.getSectionRealLength(section)) == (file.length-1)) { //если нужно добавить в старую, и она в конце конфига
+					} else if ((sec + loader.getSectionRealLength(section)) == file.length) { //если нужно добавить в старую, и она в конце конфига
 						int p = loader.Methods.recProbels(file[sec]);
 						String prob = "  ";
 						for (int i = 0; i <= p; i++) prob += ' ';
 						newfile.add(prob + name + ": " + value);
 					} else { //если позиция плавающая
 						newfile.clear();
-						for (int i = 0; i <= (sec + loader.getSectionRealLength(section)) & i < file.length; i++) newfile.add(file[i]);
+						for (int i = 0; i <= (sec + loader.getSectionRealLength(section) - 1) & i < file.length; i++) newfile.add(file[i]);
 						int p = loader.Methods.recProbels(file[sec]);
 						String prob = "  ";
 						for (int i = 0; i <= p; i++) prob += ' ';
 						newfile.add(prob + name + ": " + value);
-						for (int i = (sec + loader.getSectionRealLength(section) + 1); i < file.length; i++) newfile.add(file[i]);
+						for (int i = (sec + loader.getSectionRealLength(section)); i < file.length; i++) newfile.add(file[i]);
 					}
 					file = new String[newfile.size()];
 					for (int i = 0; i < file.length; i++) file[i] = newfile.get(i);
@@ -341,7 +341,7 @@ public class ConfigWriter { //запись и изменение конфига
 								newfile.add(("  - " + value[i]));
 							}
 						}
-					} else if ((sec + loader.getSectionRealLength(section)) == (file.length-1)) { //если нужно добавить в старую, и она в конце конфига
+					} else if ((sec + loader.getSectionRealLength(section)) == file.length) { //если нужно добавить в старую, и она в конце конфига
 						int p = loader.Methods.recProbels(file[sec]);
 						String prob = "  ";
 						for (int i = 0; i <= p; i++) prob += ' ';
@@ -362,7 +362,7 @@ public class ConfigWriter { //запись и изменение конфига
 						}
 					} else { //если позиция плавающая
 						newfile.clear();
-						for (int i = 0; i <= (sec + loader.getSectionRealLength(section)) & i < file.length; i++) newfile.add(file[i]);
+						for (int i = 0; i <= (sec + loader.getSectionRealLength(section) - 1) & i < file.length; i++) newfile.add(file[i]);
 						int p = loader.Methods.recProbels(file[sec]);
 						String prob = "  ";
 						for (int i = 0; i <= p; i++) prob += ' ';
@@ -381,7 +381,7 @@ public class ConfigWriter { //запись и изменение конфига
 								newfile.add((prob + "- " + value[i]));
 							}
 						}
-						for (int i = (sec + loader.getSectionRealLength(section) + 1); i < file.length; i++) newfile.add(file[i]);
+						for (int i = (sec + loader.getSectionRealLength(section)); i < file.length; i++) newfile.add(file[i]);
 					}
 					file = new String[newfile.size()];
 					for (int i = 0; i < file.length; i++) file[i] = newfile.get(i);
@@ -521,7 +521,7 @@ public class ConfigWriter { //запись и изменение конфига
 					int leng = loader.getSectionRealLength(section);
 					ArrayList<String> newfile = new ArrayList<String>();
 					for (int i = 0; i < index; i++) newfile.add(file[i]);
-					for (int i = (index+leng+1); i < file.length; i++) newfile.add(file[i]);
+					for (int i = (index+leng); i < file.length; i++) newfile.add(file[i]);
 					file = new String[newfile.size()];
 					for (int i = 0; i < file.length; i++) file[i] = newfile.get(i);
 					writeFile();
