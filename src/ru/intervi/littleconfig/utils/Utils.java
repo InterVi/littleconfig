@@ -61,6 +61,25 @@ public class Utils { //разные полезные методы
 	}
 	
 	/**
+	 * получить количество символов в строке
+	 * @param str строка для подсчета
+	 * @param c искомый символ
+	 * @return кол-во символов в строке (-1 если не найдено или str == null)
+	 */
+	public static int numChars(String str, char c) { //подсчитать количество символов в строке
+		if (str == null) return -1;
+		int result = -1;
+		char cc[] = str.toCharArray();
+		for (int i = 0; i < cc.length; i++) {
+			if (cc[i] == c) {
+				if (result == -1) result = 0;
+				result++;
+			}
+		}
+		return result;
+	}
+	
+	/**
 	 * получить byte из строки
 	 * @param s строка с числом
 	 * @return числовое значение из строки (0 в случае ошибки)

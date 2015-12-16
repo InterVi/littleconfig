@@ -482,10 +482,10 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		IsArray a = isArray(index);
 		if (a.array & !a.empty) {
 			if (a.skobka) { //парсинг данных из однострочного массива
-				String str = a.clear.content.substring(1, (a.clear.content.length()-1));
+				String str = a.clear.content.substring(1, (a.clear.content.length()-1)); //отрезаем скобки
 				int ch = str.indexOf('"');
 				int ch2 = str.indexOf('\'');
-				if (ch == -1 & ch2 == -1) { //если кавычки не применялись
+				if (Utils.numChars(str, '"') < 2 | Utils.numChars(str, '\'') < 2 && ch == -1 & ch2 == -1) { //если кавычки не применялись
 					result = str.split(",");
 					for (int i = 0; i < result.length; i++) {
 						if (result[i] != null) result[i] = result[i].trim();
@@ -496,7 +496,12 @@ public class ConfigLoader { //чтение конфига из файла и п�
 						Log.warn("ConfigLoader getStringArray(index): " + index + "(index), broken array");
 						return null;
 					}
-					ArrayList<int[]> q = new ArrayList<int[]>();
+					/*
+					 * 0 - первая кавычка
+					 * 1 - вторая кавычка
+					 * 2 - запятая
+					 */
+					ArrayList<int[]> q = new ArrayList<int[]>(); //список кавычек и запятых
 					char c[] = str.toCharArray();
 					int f = -1;
 					int add[] = null;
@@ -504,7 +509,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 						if (f == -1) { //поиск первой кавычки
 							if (c[i] == '"') f = i; else if (c[i] == '\'') f = i;
 						} else { //поиск второй кавычки
-							if (c[i] == '"') {
+							if (c[i] == '"' & c[f] == '"') {
 								if (add == null) { //сохранение результата
 									add = new int[3];
 									add[0] = f; add[1] = i;
@@ -525,7 +530,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 										add = null;
 									}
 								}
-							} else if (c[i] == '\'') { //тот же алгоритм
+							} else if (c[i] == '\'' & c[f] == '\'') { //тот же алгоритм
 								if (add == null) {
 									add = new int[3];
 									add[0] = f; add[1] = i;
@@ -558,7 +563,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 					iter = q.iterator();
 					while(iter.hasNext()) { //удаление добавленных элементов из строки
 						int ind[] = iter.next();
-						str = Utils.remChars(str, ind[0], ind[3]);
+						str = Utils.remChars(str, ind[0], ind[2]);
 					}
 					String split[] = str.split(",");
 					if (split != null && split.length > 0) { //добавление оставшихся элементов без кавычек
@@ -573,8 +578,13 @@ public class ConfigLoader { //чтение конфига из файла и п�
 					ClearResult r = clearStr(file[i]);
 					if (r.colon > -1) break; //выход из цикла при попадании на опцию или секцию
 					else if (r.hypindex == -1) continue; //пропускаем не нужное
-					String add = r.cleaned; //получаем готовый элемент
-					if (add != null) list.add(add);
+					String add = r.content; //получаем готовый элемент
+					if (add != null) {
+						char q1 = add.charAt(0); //чистка от кавычек
+						char q2 = add.charAt((add.length()-1));
+						if (q1 == '"' & q2 == '"' || q1 == '\'' & q2 == '\'') add = add.substring(1, (add.length()-1));
+						list.add(add);
+					}
 				}
 				result = new String[list.size()];
 				for (int i = 0; i < result.length; i++) result[i] = list.get(i);
