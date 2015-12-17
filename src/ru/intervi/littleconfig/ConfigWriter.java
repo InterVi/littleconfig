@@ -157,10 +157,10 @@ public class ConfigWriter { //запись и изменение конфига
 		if (set && patch != null) {
 			if (neew) { //есди записываем в новый конфиг
 				if (skobka) { //если значения в квадратных скобках
-					String send = name + ": [" + value[0];
+					String send = name + ": ['" + value[0] + '\'';
 					for (int i = 1; i < value.length; i++) { //парсим в строку
 						if (value[i] == null) continue;
-						send += ", " + value[i];
+						send += ", '" + value[i] + '\'';
 					}
 					send += "]";
 					file = new String[1];
@@ -192,10 +192,10 @@ public class ConfigWriter { //запись и изменение конфига
 					String pr = "";
 					for (int i = 0; i <= p; i++) pr += ' ';
 					if (skobka) { //если новый массив в скобках
-						String add = pr + name + ": [" + value[0];
+						String add = pr + name + ": ['" + value[0] + '\'';
 						for (int i = 1; i < value.length; i++) {
 							if (value[i] == null) continue;
-							add += ", " + value[i];
+							add += ", '" + value[i] + '\'';
 						}
 						add += ']';
 						paste.add(add);
@@ -229,10 +229,10 @@ public class ConfigWriter { //запись и изменение конфига
 					ArrayList<String> newfile = new ArrayList<String>();
 					for (int i = 0; i < file.length; i++) newfile.add(file[i]);
 					if (skobka) {
-						String add = name + ": [" + value[0];
+						String add = name + ": ['" + value[0] + '\'';
 						for (int i = 1; i < value.length; i++) {
 							if (value[i] == null) continue;
-							add += ", " + value[i];
+							add += ", '" + value[i] + '\'';
 						}
 						add += ']';
 						newfile.add(add);
@@ -327,10 +327,10 @@ public class ConfigWriter { //запись и изменение конфига
 					if (sec == -1) { //если создается новая секция
 						newfile.add(section + ":");
 						if (skobka) { //если нужно создать массив в скобках
-							String add = "  " + name + ": [" + value[0];
+							String add = "  " + name + ": ['" + value[0] + '\'';
 							for (int i = 1; i < value.length; i++) {
 								if (value[i] == null) continue;
-								add += ", " + value[i];
+								add += ", '" + value[i] + '\'';
 							}
 							add += ']';
 							newfile.add(add);
@@ -346,10 +346,10 @@ public class ConfigWriter { //запись и изменение конфига
 						String prob = "  ";
 						for (int i = 0; i <= p; i++) prob += ' ';
 						if (skobka) {
-							String add = prob + name + ": [" + value[0];
+							String add = prob + name + ": ['" + value[0] + '\'';
 							for (int i = 1; i < value.length; i++) {
 								if (value[i] == null) continue;
-								add += ", " + value[i];
+								add += ", '" + value[i] + '\'';
 							}
 							add += ']';
 							newfile.add(add);
@@ -367,10 +367,10 @@ public class ConfigWriter { //запись и изменение конфига
 						String prob = "  ";
 						for (int i = 0; i <= p; i++) prob += ' ';
 						if (skobka) {
-							String add = prob + name + ": [" + value[0];
+							String add = prob + name + ": ['" + value[0] + '\'';
 							for (int i = 1; i < value.length; i++) {
 								if (value[i] == null) continue;
-								add += ", " + value[i];
+								add += ", '" + value[i] + '\'';
 							}
 							add += ']';
 							newfile.add(add);
@@ -390,10 +390,10 @@ public class ConfigWriter { //запись и изменение конфига
 				if (skobka) {
 					file = new String[2];
 					file[0] = section + ":";
-					String send = "  " + name + ": [" + value[0];
+					String send = "  " + name + ": ['" + value[0] + '\'';
 					for (int i = 1; i < value.length; i++) { //парсим в строку
 						if (value[i] == null) continue;
-						send += ", " + value[i]; 
+						send += ", '" + value[i] + '\''; 
 					}
 					send += ']';
 					file[1] = send;

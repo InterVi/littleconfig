@@ -483,19 +483,12 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		if (a.array & !a.empty) {
 			if (a.skobka) { //парсинг данных из однострочного массива
 				String str = a.clear.content.substring(1, (a.clear.content.length()-1)); //отрезаем скобки
-				int ch = str.indexOf('"');
-				int ch2 = str.indexOf('\'');
-				if (Utils.numChars(str, '"') < 2 | Utils.numChars(str, '\'') < 2 && ch == -1 & ch2 == -1) { //если кавычки не применялись
+				if (Utils.numChars(str, '"') < 2 & Utils.numChars(str, '\'') < 2) { //если кавычки не применялись
 					result = str.split(",");
 					for (int i = 0; i < result.length; i++) {
 						if (result[i] != null) result[i] = result[i].trim();
 					}
 				} else { //если применялись
-					//сразу отсекаем бракованный массив
-					if (ch > -1 & ch == str.lastIndexOf('"') || ch2 > -1 & ch2 == str.lastIndexOf('\'')) {
-						Log.warn("ConfigLoader getStringArray(index): " + index + "(index), broken array");
-						return null;
-					}
 					/*
 					 * 0 - первая кавычка
 					 * 1 - вторая кавычка
@@ -513,11 +506,14 @@ public class ConfigLoader { //чтение конфига из файла и п�
 								if (add == null) { //сохранение результата
 									add = new int[3];
 									add[0] = f; add[1] = i;
-									if ((i+1) == c.length) add[2] = (i+1); //если это конец строки
+									if ((i+1) == c.length) { //если это конец строки
+										add[2] = (i+1);
+										q.add(add);
+									}
 									f = -1;
 									add = null;
 								} else { //поиск запятой
-									if (c[i] == ',') {
+									if (c[i] == ',' & add != null) {
 										for (int n = (add[1]+1); n < i; n++) {
 											if (c[n] != ' ') { //если вместо запятой другой символ - массив бракованный
 												Log.warn("ConfigLoader getStringArray(index): " + index + "(index), broken array");
