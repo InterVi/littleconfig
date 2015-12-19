@@ -118,7 +118,7 @@ public class FileStringList { //класс-основа для создания 
 	
 	/**
 	 * установить список
-	 * @param line список в виде String[]
+	 * @param lines список в виде String[]
 	 */
 	public void setList(String lines[]) { //установить список
 		list.clear();
