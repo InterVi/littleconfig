@@ -97,9 +97,18 @@ public class EasyLogger { //класс для вывода сообщений в
 	 * @param text сообщение
 	 */
 	public void info(String text) {
+		if (text == null) return;
 		String mess = info + ' ' + prefix + " [" + d.format(new Date()) + "] " + text;
 		if (send) System.out.println(mess);
 		ToFile.log(mess);
+	}
+	
+	/**
+	 * вывод инофрмационных сообщений в консоль и в лог
+	 * @param lines массив строк для вывода
+	 */
+	public void info(String lines[]) {
+		for (int i = 0; i < lines.length; i++) info(lines[i]);
 	}
 	
 	/**
@@ -107,9 +116,18 @@ public class EasyLogger { //класс для вывода сообщений в
 	 * @param text сообщение
 	 */
 	public void warn(String text) {
+		if (text == null) return;
 		String mess = warn + ' ' + prefix + " [" + d.format(new Date()) + "] " + text;
 		if (send) System.out.println(mess);
 		ToFile.log(mess);
+	}
+	
+	/**
+	 * вывод предупредительных сообщений в консоль и в лог
+	 * @param lines массив строк для вывода
+	 */
+	public void warn(String lines[]) {
+		for (int i = 0; i < lines.length; i++) info(lines[i]);
 	}
 	
 	/**
