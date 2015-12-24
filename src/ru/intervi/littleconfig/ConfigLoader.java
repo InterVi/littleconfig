@@ -24,6 +24,11 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	 * @param file объект File конфига для чтения
 	 */
 	public ConfigLoader(File file) {load(file);}
+	/**
+	 * вызывает метод fakeLoad(String[] value)
+	 * @param value конфиг в виде массива строк
+	 */
+	public ConfigLoader(String value[]) {fakeLoad(value);}
 	
 	/**
 	 * используемый логгер для вывода сообщений
