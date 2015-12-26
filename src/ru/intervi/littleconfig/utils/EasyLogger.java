@@ -6,6 +6,8 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.BufferedWriter;
 import java.lang.StackTraceElement;
+import java.util.ArrayList;
+import java.util.Iterator;
 
 /**
  * простой логгер для вывода сообщений в консоль и записи в файл
@@ -123,6 +125,7 @@ public class EasyLogger { //класс для вывода сообщений в
 		String mess = info + ' ' + prefix + " [" + d.format(new Date()) + "] " + text;
 		if (send & sinfo) System.out.println(mess);
 		ToFile.log(mess, TypeMess.INFO);
+		MemoryLog.put(mess, TypeMess.INFO);
 	}
 	
 	/**
@@ -143,6 +146,7 @@ public class EasyLogger { //класс для вывода сообщений в
 		String mess = warn + ' ' + prefix + " [" + d.format(new Date()) + "] " + text;
 		if (send & swarn) System.out.println(mess);
 		ToFile.log(mess, TypeMess.WARN);
+		MemoryLog.put(mess, TypeMess.WARN);
 	}
 	
 	/**
@@ -163,6 +167,7 @@ public class EasyLogger { //класс для вывода сообщений в
 		String mess = error + ' ' + prefix + " [" + d.format(new Date()) + "] " + text;
 		if (send & serror) System.out.println(mess);
 		ToFile.log(mess, TypeMess.ERROR);
+		MemoryLog.put(mess, TypeMess.ERROR);
 	}
 	
 	/**
@@ -180,10 +185,17 @@ public class EasyLogger { //класс для вывода сообщений в
 	 */
 	public void error(Exception e) {
 		if (error == null) return;
-		error(e.toString());
+		ArrayList<String> mess = new ArrayList<String>();
+		mess.add(e.toString());
 		StackTraceElement[] el = e.fillInStackTrace().getStackTrace();
 		for (int i = 0; i < el.length; i++) {
-			error(("   " + el[i].toString()));
+			mess.add(("   " + el[i].toString()));
+		}
+		Iterator<String> iter = mess.iterator();
+		while(iter.hasNext()) {
+			String str = iter.next();
+			error(str);
+			MemoryLog.put(str, TypeMess.ERROR);
 		}
 	}
 	
@@ -434,4 +446,181 @@ public class EasyLogger { //класс для вывода сообщений в
 		 */
 		ERROR //с ошибкой
 	}
+	
+	/**
+	 * класс с методами для работы с виртуальным логом в оперативной памяти
+	 */
+	public class MemoryLog {
+		private ArrayList<MLData> list = new ArrayList<MLData>();
+		private int limit = 100; //лимит памяти
+		private boolean pos = false; //вести ли виртуальный лог
+		private boolean isend = true; //запись инфо сообщений
+		private boolean wsend = true; //предупредительных
+		private boolean esend = true; //с ошибками
+		
+		private void put(String str, TypeMess type) { //записать сообщение в лог
+			if (!pos) return;
+			if (str == null) return;
+			switch(type) { //выход их метода, если отправка данного типа выключена
+			case INFO:
+				if (!isend) return;
+				break;
+			case WARN:
+				if (!wsend) return;
+				break;
+			case ERROR:
+				if (!esend) return;
+			}
+			MLData mld = new MLData();
+			mld.type = type;
+			mld.mess = str;
+			mld.date = new Date();
+			if (list.size() < limit) list.add(mld); else {
+				list.remove(0);
+				list.add(mld);
+			}
+		}
+		
+		/**
+		 * установить лимит памяти виртуального лога
+		 * @param limit лимит строк
+		 */
+		public void setLimit(int limit) {this.limit = limit;}
+		/**
+		 * включить ведение виртуального лога
+		 */
+		public void turnOnPosition() {pos = true;}
+		/**
+		 * выключить ведение виртуального лога
+		 */
+		public void turnOffPosition() {pos = false;}
+		/**
+		 * включить вывод информационных сообщений в виртуальный лог
+		 */
+		public void onInfo() {isend = true;}
+		/**
+		 * выключить вывод информационных сообщений в виртуальный лог
+		 */
+		public void offInfo() {isend = false;}
+		/**
+		 * включить вывод предупредительных сообщений в виртуальный лог
+		 */
+		public void onWarn() {wsend = true;}
+		/**
+		 * выключить вывод предупредительных сообщений в виртуальный лог
+		 */
+		public void offWarn() {wsend = false;}
+		/**
+		 * включить вывод сообщений об ошибках в виртуальный лог
+		 */
+		public void onError() {esend = true;}
+		/**
+		 * выключить вывод сообщений об ошибках в виртуальный лог
+		 */
+		public void offError() {esend = false;}
+		/**
+		 * получить статус вывода информационных сообщений в виртуальный лог
+		 * @return true - вывод включен; false - вывод выключен
+		 */
+		public final boolean getInfoStatus() {return isend;}
+		/**
+		 * получить статус вывода предупредительных сообщений в виртуальный лог
+		 * @return true - вывод включен; false - вывод выключен
+		 */
+		public final boolean getWarnStatus() {return wsend;}
+		/**
+		 * получить статус вывода сообщений об ошибках в виртуальный лог
+		 * @return true - вывод включен; false - вывод выключен
+		 */
+		public final boolean getErrorStatus() {return esend;}
+		
+		/**
+		 * получить лимит памяти (по-умолчанию: 100)
+		 * @return максимальное количество строк в виртуальном логе
+		 */
+		public final int getLimit() {return limit;}
+		/**
+		 * получить статус виртуального лога (по-умолчанию: false)
+		 * @return true - логирование включено; false - выключено
+		 */
+		public final boolean getPosition() {return pos;}
+		
+		/**
+		 * получить весь виртуальный лог
+		 * @return виртуальный лог в виде списка данных
+		 */
+		public final ArrayList<MLData> getAllLog() {return list;}
+		/**
+		 * получить весь виртуальный лог в виде массива строк
+		 * @return виртуальный лог в виде массива строк
+		 */
+		public String[] getAllLogArray() {
+			if (list.isEmpty()) return null;
+			String result[] = new String[list.size()];
+			for (int i = 0; i < list.size(); i++) result[i] = list.get(i).mess;
+			return result;
+		}
+		/**
+		 * получить сообщения из виртуального лога согласно типу
+		 * @param type тип сообщений
+		 * @return список данных, согласно типу
+		 */
+		public ArrayList<MLData> getLog(TypeMess type) {
+			ArrayList<MLData> result = new ArrayList<MLData>();
+			Iterator<MLData> iter = list.iterator();
+			while(iter.hasNext()) {
+				MLData mld = iter.next();
+				if (mld.type.equals(type)) result.add(mld);
+			}
+			return result;
+		}
+		/**
+		 * получить сообщения из виртуального лога согласно типу, в виде массива строк
+		 * @param type тип сообщений
+		 * @return массив строк, согласно типу
+		 */
+		public String[] getLogArray(TypeMess type) {
+			if (list.isEmpty()) return null;
+			ArrayList<String> result = new ArrayList<String>();
+			Iterator<MLData> iter = list.iterator();
+			while(iter.hasNext()) {
+				MLData mld = iter.next();
+				if (mld.type.equals(type)) result.add(mld.mess);
+			}
+			return result.toArray(new String[result.size()]);
+		}
+		
+		/**
+		 * очистить виртуальный лог
+		 */
+		public void clear() {list.clear();}
+		/**
+		 * получить весь класс
+		 * @return new MemoryLog()
+		 */
+		public MemoryLog get() {return new MemoryLog();}
+		
+		/**
+		 * класс с данными элемента виртуального лога
+		 */
+		public class MLData {
+			/**
+			 * тип сообщения
+			 */
+			public TypeMess type;
+			/**
+			 * сообщение
+			 */
+			public String mess;
+			/**
+			 * дата отправки
+			 */
+			public Date date;
+		}
+	}
+	
+	/**
+	 * инициализированный объект MemoryLog
+	 */
+	public MemoryLog MemoryLog = new MemoryLog();
 }

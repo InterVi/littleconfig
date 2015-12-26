@@ -110,8 +110,7 @@ public class FileStringList { //класс-основа для создания 
 	public String[] getStringArray() { //получить данные в виде массива строк
 		String result[] = null;
 		if (!list.isEmpty()) {
-			result = new String[list.size()];
-			for (int i = 0; i < list.size(); i++) result[i] = list.get(i);
+			result = list.toArray(new String[list.size()]);
 		} else Log.warn("FileStringList: empty list");
 		return result;
 	}

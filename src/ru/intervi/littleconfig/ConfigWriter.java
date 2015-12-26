@@ -243,8 +243,7 @@ public class ConfigWriter { //запись и изменение конфига
 							newfile.add(("- " + value[i]));
 						}
 					}
-					file = new String[newfile.size()];
-					for (int i = 0; i < newfile.size(); i++) file[i] = newfile.get(i);
+					file = newfile.toArray(new String[newfile.size()]);
 				}
 				writeFile();
 			} else Log.warn("ConfigWriter: error write array " + name + ", config file not set");
@@ -294,8 +293,7 @@ public class ConfigWriter { //запись и изменение конфига
 						newfile.add(prob + name + ": " + value);
 						for (int i = (sec + loader.getSectionRealLength(section)); i < file.length; i++) newfile.add(file[i]);
 					}
-					file = new String[newfile.size()];
-					for (int i = 0; i < file.length; i++) file[i] = newfile.get(i);
+					file = newfile.toArray(new String[newfile.size()]);
 				}
 			} else { //если создается новый конфиг
 				file = new String[2];
@@ -383,8 +381,7 @@ public class ConfigWriter { //запись и изменение конфига
 						}
 						for (int i = (sec + loader.getSectionRealLength(section)); i < file.length; i++) newfile.add(file[i]);
 					}
-					file = new String[newfile.size()];
-					for (int i = 0; i < file.length; i++) file[i] = newfile.get(i);
+					file = newfile.toArray(new String[newfile.size()]);
 				}
 			} else { //если создается новый конфиг
 				if (skobka) {
@@ -423,8 +420,7 @@ public class ConfigWriter { //запись и изменение конфига
 					ArrayList<String> newfile = new ArrayList<String>();
 					for (int i = 0; i < index; i++) newfile.add(file[i]);
 					for (int i = (index+1); i < file.length; i++) newfile.add(file[i]);
-					file = new String[newfile.size()];
-					for (int i = 0; i < file.length; i++) file[i] = newfile.get(i);
+					file = newfile.toArray(new String[newfile.size()]);
 					writeFile();
 				} else Log.warn("ConfigWriter: error delete var " + name + ", var not found");
 			} else Log.warn("ConfigWriter: error delete var " + name + ", config file not found");
@@ -454,8 +450,7 @@ public class ConfigWriter { //запись и изменение конфига
 						ArrayList<String> newfile = new ArrayList<String>();
 						for (int i = 0; i < index; i++) newfile.add(file[i]);
 						for (int i = (index+leng+1); i < file.length; i++) newfile.add(file[i]);
-						file = new String[newfile.size()];
-						for (int i = 0; i < file.length; i++) file[i] = newfile.get(i);
+						file = newfile.toArray(new String[newfile.size()]);
 						writeFile();
 					}
 				} else Log.warn("ConfigWriter: error delete array " + name + ", array not found");
@@ -522,8 +517,7 @@ public class ConfigWriter { //запись и изменение конфига
 					ArrayList<String> newfile = new ArrayList<String>();
 					for (int i = 0; i < index; i++) newfile.add(file[i]);
 					for (int i = (index+leng); i < file.length; i++) newfile.add(file[i]);
-					file = new String[newfile.size()];
-					for (int i = 0; i < file.length; i++) file[i] = newfile.get(i);
+					file = newfile.toArray(new String[newfile.size()]);
 					writeFile();
 				} else Log.warn("ConfigWriter: error delete section " + section + ", section not found");
 			} else Log.warn("ConfigWriter: error delete section " + section + ", config file not found");

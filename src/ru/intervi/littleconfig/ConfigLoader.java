@@ -599,8 +599,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 							fc = i;
 						}
 					}
-					result = new String[list.size()]; //сохранение результатов
-					for (int i = 0; i < result.length; i++) result[i] = list.get(i);
+					result = list.toArray(new String[list.size()]); //сохранение результатов
 				}
 			} else { //парсинг данных из многострочного массива
 				ArrayList<String> list = new ArrayList<String>();
@@ -616,8 +615,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 						list.add(add);
 					}
 				}
-				result = new String[list.size()];
-				for (int i = 0; i < result.length; i++) result[i] = list.get(i);
+				result = list.toArray(new String[list.size()]);
 			}
 		} else if (!a.array) Log.warn("ConfigLoader getStringArray(index): " + index + "(index), not array");
 		
@@ -809,10 +807,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 					continue;
 				}
 			}
-			if (!list.isEmpty()) { //заполнение результатов
-				result = new String[list.size()];
-				for (int i = 0; i < list.size(); i++) result[i] = list.get(i);
-			}
+			result = list.toArray(new String[list.size()]); //заполнение результатов
 		} else Log.warn("ConfigLoader getConfigVars: failed, config not loaded");
 		return result;
 	}
@@ -970,6 +965,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 					}
 					if (r.colon > -1 & r.name != null) list.add(r.name);
 				}
+				result = list.toArray(new String[list.size()]);
 			}
 		} else Log.warn("ConfigLoader isSection: failed check " + name + ", config not loaded or file[i] == null");
 		return result;
@@ -1023,10 +1019,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 					i += getSectionRealLength(i)-1; //пропуск содержимого секций
 				}
 			}
-			if (!list.isEmpty()) {
-				result = new String[list.size()];
-				for (int i = 0; i < list.size(); i++) result[i] = list.get(i);
-			}
+			result = list.toArray(new String[list.size()]);
 		} else Log.warn("ConfigLoader getSectionNames: failed get sections names, config not loaded or file == null");
 		return result;
 	}
@@ -1052,10 +1045,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 					i += getSectionRealLength(i)-1; //пропуск содержимого секций
 				}
 			}
-			if (!list.isEmpty()) {
-				result = new String[list.size()];
-				for (int i = 0; i < result.length; i++) result[i] = list.get(i);
-			}
+			result = list.toArray(new String[list.size()]);
 		} else Log.warn("ConfigLoader getSectionNames: failed get " + name + " config not loaded or file == null");
 		return result;
 	}
@@ -1424,8 +1414,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 					if (r.cleaned != null) list.add(r.cleaned);
 				}
 			}
-			file = new String[list.size()];
-			for (int i = 0; i < file.length; i++) file[i] = list.get(i);
+			file = list.toArray(new String[list.size()]);
 		}
 		/**
 		 * узнать реальную длинну многострочного массива в конфиге, включая строку с названием

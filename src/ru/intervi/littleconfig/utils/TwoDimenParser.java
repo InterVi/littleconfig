@@ -46,10 +46,6 @@ public class TwoDimenParser {
 			list.add(add);
 			if (l < add.length) l = add.length; //вычисление максимальной длинны
 		}
-		if (!list.isEmpty()) { //заполнение результатов
-			String result[][] = new String[list.size()][l];
-			for (int i = 0; i < list.size(); i++) result[i] = list.get(i);
-			return result;
-		} else return null;
+		return list.toArray(new String[list.size()][l]);
 	}
 }
