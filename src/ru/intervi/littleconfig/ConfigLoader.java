@@ -15,12 +15,12 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	 */
 	public ConfigLoader() {}
 	/**
-	 * вызывает метод load(String f)
+	 * вызывает метод load(String path)
 	 * @param file путь к конфигу
 	 */
 	public ConfigLoader(String file) {load(file);}
 	/**
-	 * вызывает метод load(File f)
+	 * вызывает метод load(File file)
 	 * @param file объект File конфига для чтения
 	 */
 	public ConfigLoader(File file) {load(file);}
@@ -62,30 +62,30 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	
 	/**
 	 * прочитать конфиг
-	 * @param f путь к конфигу
+	 * @param path путь к конфигу
 	 */
-	public void load(String f) { //загрузка конфина
-		if (f == null) {
-			Log.warn("ConfigLoader load(String f): null path");
+	public void load(String path) { //загрузка конфина
+		if (path == null) {
+			Log.warn("ConfigLoader load(String path): null path");
 			return;
 		}
-		LoaderResult result = getList(f);
-		if (result.load) {
-			file = result.list;
-			get = true;
-		}
+		load(new File(path));
 	}
 	
 	/**
 	 * прочитать конфиг
-	 * @param f объект File конфига для чтения
+	 * @param file объект File конфига для чтения
 	 */
-	public void load(File f) { //загрузка конфига
-		if (f == null) {
-			Log.warn("ConfigLoader load(File f): null File");
+	public void load(File file) { //загрузка конфига
+		if (file == null) {
+			Log.warn("ConfigLoader load(File file): null File");
 			return;
 		}
-		load(f.getAbsolutePath());
+		LoaderResult result = getList(file);
+		if (result.load) {
+			this.file = result.list;
+			get = true;
+		}
 	}
 	
 	/**
@@ -106,9 +106,9 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	 * @param f путь к конфигу
 	 * @return результат в виде LoaderResult
 	 */
-	public LoaderResult getList(String f) { //получаем текстовый файл массивом, очищенный от комментов
+	public LoaderResult getList(File file) { //получаем текстовый файл массивом, очищенный от комментов
 		LoaderResult result = new LoaderResult();
-		FileStringList list = new FileStringList(f);
+		FileStringList list = new FileStringList(file);
 		list.Log.offLog();
 		if (list.isLoad()) {
 			result.list = list.getStringArray();
@@ -221,42 +221,68 @@ public class ConfigLoader { //чтение конфига из файла и п�
 				sq = -1, sq2 = -1, //квадратные скобки
 				hyp = -1; //тире
 		boolean qn = false; //заключено ли название в кавычки
+		boolean br = false; //прервать ли цикл
 		for (int i = 0; i < c.length; i++) {
+			if (br) break; //прерывание обработки в случае нахождения ошибки
 			if (c[i] == ' ') { //пропуск обработки пробелов
 				p++;
 				continue;
 			}
-			if (d == -1 & hyp == -1) { //нахождение двоеточия
+			if (d == -1 & hyp == -1) { //нахождение стартовых символов элементов
+				boolean qf = false; //найдена кавычка
+				char qc = '.'; //символ кавычки
 				switch(c[i]) {
 				case ':':
-					if (i != 0 | i != (p+1)) d = i; //если перед двоеточием нет символов - опция бракованная
+					if (i != 0 | i != (p+1)) d = i; else br = true; //если перед двоеточием нет символов - опция бракованная
 					continue;
 				case '-': //нахождения дефиса (для корректной очистки элементов массивов)
-					hyp = i;
+					if (i == 0 | i == (p+1)) hyp = i; else br = true; //перед дефисом наоборот символов быть не должно
 					continue;
 				case '"': //обработка названий, заключенных в кавычки
-					for (int n = (i+1); n < c.length; n++) {
-						if (c[n] == ':' && c[n-1] == '"') {
-							result.name = s.substring((i+1), (n-1));
-							d = n;
-							i = n;
-							qn = true;
-							break;
-						}
+					if (i == 0 | i == (p+1)) { //та же проверка - перед кавычкой не должно быть символов
+						qf = true;
+						qc = '"';
+					} else {
+						br = true;
+						continue;
 					}
-					continue;
+					break;
 				case '\'':
+					if (i == 0 | i == (p+1)) {
+						qf = true;
+						qc = '\'';
+					} else {
+						br = true;
+						continue;
+					}
+					break;
+				default:
+					continue;
+				}
+				if (qf) { //обработка названия в кавычках
+					/*
+					 * поиск закрывающей конструкции: ':, ":
+					 * (смотря какая кавычка)
+					 */
 					for (int n = (i+1); n < c.length; n++) {
-						if (c[n] == ':' && c[n-1] == '\'') {
-							result.name = s.substring((i+1), (n-1));
+						if (c[n] == ':' && c[n-1] == qc) {
+							if ((n-i) <= 2) { //если между кавычек пусто
+								br = true;
+								break;
+							}
+							String name = s.substring((i+1), (n-1));
+							if (Utils.trim(name).length() == 0) { //если между кавычек одни пробелы
+								br = true;
+								break;
+							}
+							result.name = name;
 							d = n;
 							i = n;
 							qn = true;
 							break;
 						}
+						if ((n+1) == c.length) br = true; //если закрывающая конструкция так и не была найдена
 					}
-					continue;
-				default:
 					continue;
 				}
 			} else {
@@ -1025,7 +1051,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	}
 	
 	/**
-	 * получить длинну секции (количество строк в конфиге, строка с названием секции входит в число)
+	 * получить длинну секции (количество строк в секции, строка с названием секции входит в число)
 	 * @param name имя секции
 	 * @return количество строк в секции в виде int (-1, если секция не найдена либо пуста)
 	 */
@@ -1130,6 +1156,31 @@ public class ConfigLoader { //чтение конфига из файла и п�
 			result = isSetArray(getIndexInSection(section, name));
 		} else Log.warn("ConfigLoader isSetArrayInSection: failed check " + name + " in " + section + " config not loaded or file == null");
 		return result;
+	}
+	
+	private ConfigLoader getSection(int index) { //получить лоадер с нужной секцией
+		if (index < 0) {Log.warn("ConfigLoader getSection: index < 0"); return null;}
+		int l = getSectionRealLength(index);
+		ConfigLoader loader = new ConfigLoader();
+		if (l > 0) {
+			String sec[] = new String[l];
+			for (int i = index; i < (index+l) & i < file.length; i++) sec[(i-index)] = file[index];
+			loader.fakeLoad(sec);
+		}
+		return loader;
+	}
+	
+	/**
+	 * получить ConfigLoader с секцией для работы с ней
+	 * @param name имя секции
+	 * @return ConfigLoader с загруженной секцией либо null в случае ошибки, либо пустой класс (необходимо проверять через isLoad())
+	 */
+	public ConfigLoader getSection(String name) {
+		if (name == null) {Log.warn("ConfigLoader getSection: null name"); return null;}
+		int index = getIndexSection(name);
+		ConfigLoader loader = null;
+		if (index >= 0) loader = getSection(index);
+		return loader;
 	}
 	
 	/**
@@ -1477,6 +1528,14 @@ public class ConfigLoader { //чтение конфига из файла и п�
 				}
 			}
 			return result;
+		}
+		/**
+		 * получить ConfigLoader с секцией (см. {@link ru.intervi.littleconfig.ConfigLoader#getSection(String)})
+		 * @param index индекс секции
+		 * @return см. {@link ru.intervi.littleconfig.ConfigLoader#getSection(String)}
+		 */
+		public ConfigLoader recSection(int index) {
+			return getSection(index);
 		}
 	}
 	/**

@@ -13,8 +13,8 @@ public class Utils { //разные полезные методы
 	/**
 	 * удаляет часть из строки
 	 * @param s строка
-	 * @param p1 первый индекс
-	 * @param p2 второй индекс
+	 * @param p1 индекс первого элемента
+	 * @param p2 индекс второго элемента
 	 * @return строка без части, находящейся между p1 и p2
 	 */
 	public static String remChars(String s, int p1, int p2) { //метод для вырезания символов из строк
@@ -36,6 +36,7 @@ public class Utils { //разные полезные методы
 	 * @return строка без символа
 	 */
 	public static String remChar(String s, char c) { //чистка от символа
+		if (s == null) return null;
 		char str[] = s.toCharArray();
 		ArrayList<char[]> list = new ArrayList<char[]>();
 		for (int i = 0; i < str.length; i++) {
@@ -179,7 +180,9 @@ public class Utils { //разные полезные методы
 		byte result[] = null;
 		try {
 			result = new byte[s.length];
-			for (int i = 0; i < s.length; i++) result[i] = Byte.parseByte(s[i]);
+			for (int i = 0; i < s.length; i++) {
+				if (s[i] != null) result[i] = Byte.parseByte(s[i]);
+			}
 		} catch(Exception e) {e.printStackTrace();}
 		return result;
 	}
@@ -194,7 +197,9 @@ public class Utils { //разные полезные методы
 		short result[] = null;
 		try {
 			result = new short[s.length];
-			for (int i = 0; i < s.length; i++) result[i] = Short.parseShort(s[i]);
+			for (int i = 0; i < s.length; i++) {
+				if (s[i] != null) result[i] = Short.parseShort(s[i]);
+			}
 		} catch(Exception e) {e.printStackTrace();}
 		return result;
 	}
@@ -209,7 +214,9 @@ public class Utils { //разные полезные методы
 		int result[] = null;
 		try {
 			result = new int[s.length];
-			for (int i = 0; i < s.length; i++) result[i] = Integer.parseInt(s[i]);
+			for (int i = 0; i < s.length; i++) {
+				if (s[i] != null) result[i] = Integer.parseInt(s[i]);
+			}
 		} catch(Exception e) {e.printStackTrace();}
 		return result;
 	}
@@ -224,7 +231,9 @@ public class Utils { //разные полезные методы
 		long result[] = null;
 		try {
 			result = new long[s.length];
-			for (int i = 0; i < s.length; i++) result[i] = Long.parseLong(s[i]);
+			for (int i = 0; i < s.length; i++) {
+				if (s[i] != null) result[i] = Long.parseLong(s[i]);
+			}
 		} catch(Exception e) {e.printStackTrace();}
 		return result;
 	}
@@ -239,7 +248,9 @@ public class Utils { //разные полезные методы
 		double result[] = null;
 		try {
 			result = new double[s.length];
-			for (int i = 0; i < s.length; i++) result[i] = Double.parseDouble(s[i]);
+			for (int i = 0; i < s.length; i++) {
+				if (s[i] != null) result[i] = Double.parseDouble(s[i]);
+			}
 		} catch(Exception e) {e.printStackTrace();}
 		return result;
 	}
@@ -254,7 +265,9 @@ public class Utils { //разные полезные методы
 		boolean result[] = null;
 		try {
 			result = new boolean[s.length];
-			for (int i = 0; i < s.length; i++) result[i] = Boolean.parseBoolean(s[i]);
+			for (int i = 0; i < s.length; i++) {
+				if (s[i] != null) result[i] = Boolean.parseBoolean(s[i]);
+			}
 		} catch(Exception e) {e.printStackTrace();}
 		return result;
 	}
@@ -307,5 +320,29 @@ public class Utils { //разные полезные методы
 			e.printStackTrace();
 			return false;
 		}
+	}
+	
+	/**
+	 * заменить часть массива
+	 * @param value массив строк, в котором производится замена
+	 * @param replace замена
+	 * @param firstIndex индекс первого элемента, с которого начинается вставка замены
+	 * @param lastIndex индекс последнего элемента, до которого вставляется замена
+	 * @return массив строк с произведенной заменой
+	 */
+	public String[] replacePart(String[] value, String[] replace, int firstIndex, int lastIndex) {
+		if (value == null | replace == null) return null;
+		if (firstIndex < 0 | lastIndex < 0) return null;
+		ArrayList<String> list = new ArrayList<String>();
+		for (int i = 0; i < firstIndex & i < value.length; i++) {
+			if (value[i] != null) list.add(value[i]);
+		}
+		for (int i = 0; i < replace.length; i++) {
+			if (replace[i] != null) list.add(replace[i]);
+		}
+		for (int i = lastIndex; i < value.length; i++) {
+			if (value[i] != null) list.add(value[i]);
+		}
+		return list.toArray(new String[list.size()]);
 	}
 }

@@ -16,7 +16,7 @@ import ru.intervi.littleconfig.utils.EasyLogger;
 public class FileStringList { //класс-основа для создания БД на файле
 	public FileStringList() {}
 	/**
-	 * вызывает метод read(String file)
+	 * вызывает метод read(String path)
 	 * @param file путь к текстовому файлу
 	 */
 	public FileStringList(String file) {read(file);}
@@ -39,14 +39,23 @@ public class FileStringList { //класс-основа для создания 
 	
 	/**
 	 * чтение файла
-	 * @param file путь к файлу
+	 * @param path путь к файлу
 	 */
-	public void read(String file) { //чтение файла
-		File f = new File(file);
-		if (f.isFile()) {
+	public void read(String path) { //чтение файла
+		if (path == null) {Log.warn("FileStringList: error read, null path"); return;}
+		read(new File(path));
+	}
+	
+	/**
+	 * чтение файла
+	 * @param file читаемый объект File
+	 */
+	public void read(File file) { //чтение файла
+		if (file == null) {Log.warn("FileStringList: error read, null file"); return;}
+		if (file.isFile()) {
 			if (!list.isEmpty()) list.clear();
 			try {
-				BufferedReader reader = new BufferedReader(new FileReader(f));
+				BufferedReader reader = new BufferedReader(new FileReader(file));
 				while(reader.ready()) {
 					String line = reader.readLine();
 					if (line != null) list.add(line);
@@ -61,18 +70,20 @@ public class FileStringList { //класс-основа для создания 
 	}
 	
 	/**
-	 * чтение файла
-	 * @param file читаемый объект File
+	 * запись в файл
+	 * @param path путь к файлу
 	 */
-	public void read(File file) { //чтение файла
-		read(file.getAbsolutePath());
+	public void write(String path) { //запись файла
+		if (path == null) {Log.warn("FileStringList: error write, null path"); return;}
+		write(new File(path));
 	}
 	
 	/**
 	 * запись в файл
-	 * @param file путь к файлу
+	 * @param file записываемый объект File
 	 */
-	public void write(String file) { //запись файла
+	public void write(File file) { //запись файла
+		if (file == null) {Log.warn("FileStringList: error write, null write"); return;}
 		if (!list.isEmpty()) {
 			BufferedWriter writer = null;
 			try {
@@ -93,14 +104,6 @@ public class FileStringList { //класс-основа для создания 
 				}
 			}
 		} else Log.warn("FileStringList: empty list " + file);
-	}
-	
-	/**
-	 * запись в файл
-	 * @param file записываемый объект File
-	 */
-	public void write(File file) { //запись файла
-		write(file.getAbsolutePath());
 	}
 		
 	/**
