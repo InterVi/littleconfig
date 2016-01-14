@@ -18,15 +18,23 @@ public class ConfigWriter { //запись и изменение конфига
 	 */
 	public ConfigWriter() {}
 	/**
-	 * вызывает метод setConfig(String file)
-	 * @param file путь к конфигу
+	 * вызывает метод {@link ru.intervi.littleconfig.ConfigWriter#setConfig(String)}
+	 * @param path путь к конфигу
 	 */
-	public ConfigWriter(String file) {setConfig(file);}
+	public ConfigWriter(String path) {setConfig(path);}
 	/**
-	 * вызывает метод setConfig(File file)
+	 * вызывает метод {@link ru.intervi.littleconfig.ConfigWriter#setConfig(File)}
 	 * @param file объект File конфига для записи
 	 */
 	public ConfigWriter(File file) {setConfig(file);}
+	/**
+	 * вызывает методы {@link ru.intervi.littleconfig.ConfigWriter#setFakeConfig(String[])} и {@link ru.intervi.littleconfig.ConfigWriter#offWrite()}
+	 * @param value значение конфига в виде массива строк
+	 */
+	public ConfigWriter(String value[]) {
+		setFakeConfig(value);
+		offWrite();
+	}
 	
 	/**
 	 * используемый логгер для вывода сообщений
@@ -39,7 +47,7 @@ public class ConfigWriter { //запись и изменение конфига
 	private boolean wr = true; //записывать ли изменения
 	
 	/**
-	 * указать файл конфига
+	 * указать файл конфига (вызовет {@link ru.intervi.littleconfig.ConfigWriter#setConfig(File)})
 	 * @param path путь к файлу
 	 * @return true если процесс удался; false если нет
 	 */

@@ -15,17 +15,17 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	 */
 	public ConfigLoader() {}
 	/**
-	 * вызывает метод load(String path)
+	 * вызывает метод {@link ru.intervi.littleconfig.ConfigLoader#load(String)}
 	 * @param file путь к конфигу
 	 */
 	public ConfigLoader(String file) {load(file);}
 	/**
-	 * вызывает метод load(File file)
+	 * вызывает метод {@link ru.intervi.littleconfig.ConfigLoader#load(File)}
 	 * @param file объект File конфига для чтения
 	 */
 	public ConfigLoader(File file) {load(file);}
 	/**
-	 * вызывает метод fakeLoad(String[] value)
+	 * вызывает метод {@link ru.intervi.littleconfig.ConfigLoader#fakeLoad(String[])}
 	 * @param value конфиг в виде массива строк
 	 */
 	public ConfigLoader(String value[]) {fakeLoad(value);}
@@ -61,7 +61,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	}
 	
 	/**
-	 * прочитать конфиг
+	 * прочитать конфиг (вызовет {@link ru.intervi.littleconfig.ConfigLoader#load(File)})
 	 * @param path путь к конфигу
 	 */
 	public void load(String path) { //загрузка конфина
@@ -103,7 +103,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	
 	/**
 	 * загрузка конфига, прямой метод (вызывается load(String f))
-	 * @param f путь к конфигу
+	 * @param file путь к конфигу
 	 * @return результат в виде LoaderResult
 	 */
 	public LoaderResult getList(File file) { //получаем текстовый файл массивом, очищенный от комментов
@@ -271,7 +271,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 								break;
 							}
 							String name = s.substring((i+1), (n-1));
-							if (Utils.trim(name).length() == 0) { //если между кавычек одни пробелы
+							if (Utils.trim(name).isEmpty()) { //если между кавычек одни пробелы
 								br = true;
 								break;
 							}
@@ -915,6 +915,105 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		return isSetArray(getIndexNoSection(name));
 	}
 	
+	/**
+	 * типы переменных
+	 */
+	public enum TypeValue {
+		STRING,
+		BYTE,
+		SHORT,
+		INT,
+		LONG,
+		FLOAT,
+		DOUBLE,
+		BOOLEAN,
+		STRING_ARRAY,
+		BYTE_ARRAY,
+		SHORT_ARRAY,
+		INT_ARRAY,
+		LONG_ARRAY,
+		FLOAT_ARRAY,
+		DOUBLE_ARRAY,
+		BOOLEAN_ARRAY,
+		SECTION,
+		NULL
+	}
+	
+	private TypeValue getTypeData(String str) { //узнать тип данных в строке
+		TypeValue result = TypeValue.NULL;
+		if (str == null) {Log.warn("ConfigLoader getTypeData: null str"); return result;}
+		if (str.isEmpty()) return result;
+		int l = str.length();
+		if (str.matches("[0-9]*") && l <= 19) result = TypeValue.LONG; //соответствует long
+		else if (str.matches("[0-9-]*") && str.lastIndexOf('-') == 0 && l <= 20) result = TypeValue.LONG; //long
+		else if (str.matches("[0-9.[E]]") | str.matches("[0-9.-[E]")) { //предварительные проверки данных
+			int d = str.indexOf('.');
+			if (d > 0 & str.indexOf('E') > d & Utils.numChars(str, 'E') == 1
+					||
+					str.lastIndexOf('-') == 0 & d > 0 & str.indexOf('E') > d & Utils.numChars(str, 'E') == 1) {
+				boolean f = false;
+				boolean dd = false;
+				try { //проверка принадлежности к типам путем парсинга
+					Float.parseFloat(str);
+					f = true;
+				} catch(Exception e) {f = false;};
+				if (!f) {
+					try {
+						Double.parseDouble(str);
+						dd = true;
+					} catch(Exception e) {dd = false;}
+				}
+				if (f) result = TypeValue.FLOAT;
+				else if (dd) result = TypeValue.DOUBLE;
+			}
+		}
+		else if (str.equalsIgnoreCase("true") | str.equalsIgnoreCase("false")) result = TypeValue.BOOLEAN; //проверка на булеву
+		else result = TypeValue.STRING; //проверки не пройдены - значит строка
+		if (result.equals(TypeValue.LONG)) { //дальнейшее определение путем проверки диапазона значений
+			try {
+				long test = Long.parseLong(str);
+				if (test >= -128 & test <= 127) result = TypeValue.BYTE;
+				else if (test >= -32768 & test <= 32767) result = TypeValue.SHORT;
+				else if (test >= -2147483648 & test <= 2147483647) result = TypeValue.INT;
+			} catch(Exception e) {result = TypeValue.STRING;}
+		}
+		return result;
+	}
+	
+	private TypeValue getTypeData(String value[]) { //узнать тип данных в массиве
+		TypeValue result = TypeValue.NULL;
+		if (value == null) {Log.warn("ConfigLoader getTypeValue: null array"); return result;}
+		for (int i = 0; i < value.length; i++) {
+			TypeValue t = getTypeData(value[i]);
+			if (i > 0 && !t.equals(result)) {
+				result = TypeValue.STRING;
+				break;
+			}
+			result = t;
+		}
+		return result;
+	}
+	
+	/**
+	 * узнать тип переменной
+	 * @param name имя переменной
+	 * @return тип переменной в виде {@link ru.intervi.littleconfig.ConfigLoader.TypeValue}
+	 */
+	public TypeValue getType(String name) {
+		TypeValue result = TypeValue.NULL;
+		if (name == null) {Log.warn("ConfigLoader getType: null name"); return result;}
+		if (get & file != null) {
+			int index = getIndexNoSection(name);
+			if (index > -1) {
+				ClearResult r = clearStr(file[index]);
+				if (!r.broken) result = getTypeData(r.content);
+				else if (isArray(index).array) result = getTypeData(getStringArray(index));
+				else if (isSection(name)) result = TypeValue.SECTION;
+			}
+		} else Log.warn("ConfigLoader getType: failed get " + name + ", config not loaded or file == null");
+		return result;
+	}
+	
 	private int getProbels(String s) { //узнаем кол-во пробелов в начале строки
 		if (s == null) {Log.warn("ConfigLoader getProbels: failed, null String"); return -1;}
 		char c[] = s.toCharArray();
@@ -937,7 +1036,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 					}
 				}
 			}
-		} else Log.warn("ConfigLoader getIndexSection: failed get " + name + " config not loaded or file == null");
+		} else Log.warn("ConfigLoader getIndexSection: failed get " + name + ", config not loaded or file == null");
 		return result;
 	}
 	
@@ -958,7 +1057,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 					}
 				}
 			}
-		} else Log.warn("ConfigLoader getIndexNoSection: failed get " + name + " config not loaded or file == null");
+		} else Log.warn("ConfigLoader getIndexNoSection: failed get " + name + ", config not loaded or file == null");
 		return result;
 	}
 	
@@ -1046,7 +1145,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 					if ((i+1) == file.length) result = i-(index-1); //если цикл дошел до конца массива
 				}
 			}
-		} else Log.warn("ConfigLoader getSectionRealLength(index): failed get " + index + " config not loaded or file == null");
+		} else Log.warn("ConfigLoader getSectionRealLength(index): failed get " + index + ", config not loaded or file == null");
 		return result;
 	}
 	
@@ -1103,7 +1202,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 				}
 			}
 			result = list.toArray(new String[list.size()]);
-		} else Log.warn("ConfigLoader getSectionNames: failed get " + name + " config not loaded or file == null");
+		} else Log.warn("ConfigLoader getSectionNames: failed get " + name + ", config not loaded or file == null");
 		return result;
 	}
 	
@@ -1124,12 +1223,12 @@ public class ConfigLoader { //чтение конфига из файла и п�
 					}
 				}
 			}
-		} else Log.warn("ConfigLoader getIndexInSection: failed get " + name + " in " + section + " config not loaded or file == null");
+		} else Log.warn("ConfigLoader getIndexInSection: failed get " + name + " in " + section + ", config not loaded or file == null");
 		return result;
 	}
 	
 	/**
-	 * проверить, есть ли какое-либо значение у переменной (аналог isSet для секций)
+	 * проверить, есть ли какое-либо значение у переменной (аналог {@link ru.intervi.littleconfig.ConfigLoader#isSet(String)} для секций)
 	 * @param section имя секции
 	 * @param name имя переменной
 	 * @return true если да; false если нет
@@ -1139,12 +1238,12 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		if (name == null | section == null) {Log.warn("ConfigLoader isSetInSection: null name or null section"); return result;}
 		if (get & file != null) {
 			result = isSet(getIndexInSection(section, name));
-		} else Log.warn("ConfigLoader isSetInSection: failed check " + name + " in " + section + " config not loaded or file == null");
+		} else Log.warn("ConfigLoader isSetInSection: failed check " + name + " in " + section + ", config not loaded or file == null");
 		return result;
 	}
 	
 	/**
-	 * проверка, есть ли какое-либо значение у массива (аналог isSetArray для секций)
+	 * проверка, есть ли какое-либо значение у массива (аналог {@link ru.intervi.littleconfig.ConfigLoader#isSetArray(String)} для секций)
 	 * @param section имя секции
 	 * @param name имя переменной
 	 * @return true если да; false если нет
@@ -1154,7 +1253,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		if (name == null | section == null) {Log.warn("ConfigLoader isSetArrayInSection: null name or null section"); return result;}
 		if (get & file != null) {
 			result = isSetArray(getIndexInSection(section, name));
-		} else Log.warn("ConfigLoader isSetArrayInSection: failed check " + name + " in " + section + " config not loaded or file == null");
+		} else Log.warn("ConfigLoader isSetArrayInSection: failed check " + name + " in " + section + ", config not loaded or file == null");
 		return result;
 	}
 	
@@ -1173,7 +1272,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	/**
 	 * получить ConfigLoader с секцией для работы с ней
 	 * @param name имя секции
-	 * @return ConfigLoader с загруженной секцией либо null в случае ошибки, либо пустой класс (необходимо проверять через isLoad())
+	 * @return ConfigLoader с загруженной секцией либо null в случае ошибки, либо пустой класс (необходимо проверять через {@link ru.intervi.littleconfig.ConfigLoader#isLoad()})
 	 */
 	public ConfigLoader getSection(String name) {
 		if (name == null) {Log.warn("ConfigLoader getSection: null name"); return null;}
@@ -1181,6 +1280,27 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		ConfigLoader loader = null;
 		if (index >= 0) loader = getSection(index);
 		return loader;
+	}
+	
+	/**
+	 * узнать тип переменной в секции
+	 * @param section имя секции
+	 * @param name имя переменной
+	 * @return тип переменной в виде {@link ru.intervi.littleconfig.ConfigLoader.TypeValue}
+	 */
+	public TypeValue getTypeInSection(String section, String name) {
+		TypeValue result = TypeValue.NULL;
+		if (name == null | section == null) {Log.warn("ConfigLoader getTypeInSection: null name or null section"); return result;}
+		if (get & file != null) {
+			int index = getIndexInSection(section, name);
+			if (index > -1) {
+				ClearResult r = clearStr(file[index]);
+				if (!r.broken) result = getTypeData(r.content);
+				else if (isArray(index).array) result = getTypeData(getStringArray(index));
+				else if (isSection(index)) result = TypeValue.SECTION;
+			}
+		} else Log.warn("ConfigLoader getTypeInSection: failed get " + name + " in " + section + ", config not loaded or file == null");
+		return result;
 	}
 	
 	/**
@@ -1194,7 +1314,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		if (name == null | section == null) {Log.warn("ConfigLoader getStringInSection: null name or null section"); return result;}
 		if (get & file != null) {
 			result = getString(getIndexInSection(section, name));
-		} else Log.warn("ConfigLoader getStringInSection: failed get " + name + " in " + section + " config not loaded or file == null");
+		} else Log.warn("ConfigLoader getStringInSection: failed get " + name + " in " + section + ", config not loaded or file == null");
 		return result;
 	}
 	
@@ -1209,7 +1329,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		if (name == null | section == null) {Log.warn("ConfigLoader getByteInSection: null name or null section"); return result;}
 		if (get & file != null) {
 			result = getByte(getIndexInSection(section, name));
-		} else Log.warn("ConfigLoader getByteInSection: failed get " + name + " in " + section + " config not loaded or file == null");
+		} else Log.warn("ConfigLoader getByteInSection: failed get " + name + " in " + section + ", config not loaded or file == null");
 		return result;
 	}
 	
@@ -1224,7 +1344,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		if (name == null | section == null) {Log.warn("ConfigLoader getShortInSection: null name or null section"); return result;}
 		if (get & file != null) {
 			result = getShort(getIndexInSection(section, name));
-		} else Log.warn("ConfigLoader getShortInSection: failed get " + name + " in " + section + " config not loaded or file == null");
+		} else Log.warn("ConfigLoader getShortInSection: failed get " + name + " in " + section + ", config not loaded or file == null");
 		return result;
 	}
 	
@@ -1239,7 +1359,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		if (name == null | section == null) {Log.warn("ConfigLoader getIntInSection: null name or null section"); return result;}
 		if (get & file != null) {
 			result = getInt(getIndexInSection(section, name));
-		} else Log.warn("ConfigLoader getIntInSection: failed get " + name + " in " + section + " config not loaded or file == null");
+		} else Log.warn("ConfigLoader getIntInSection: failed get " + name + " in " + section + ", config not loaded or file == null");
 		return result;
 	}
 	
@@ -1254,7 +1374,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		if (name == null | section == null) {Log.warn("ConfigLoader getLongInSection: null name or null section"); return result;}
 		if (get & file != null) {
 			result = getLong(getIndexInSection(section, name));
-		} else Log.warn("ConfigLoader getLongInSection: failed get " + name + " in " + section + " config not loaded or file == null");
+		} else Log.warn("ConfigLoader getLongInSection: failed get " + name + " in " + section + ", config not loaded or file == null");
 		return result;
 	}
 	
@@ -1269,7 +1389,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		if (name == null | section == null) {Log.warn("ConfigLoader getDoubleInSection: null name or null section"); return result;}
 		if (get & file != null) {
 			result = getDouble(getIndexInSection(section, name));
-		} else Log.warn("ConfigLoader getDoubleInSection: failed get " + name + " in " + section + " config not loaded or file == null");
+		} else Log.warn("ConfigLoader getDoubleInSection: failed get " + name + " in " + section + ", config not loaded or file == null");
 		return result;
 	}
 	
@@ -1284,7 +1404,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		if (name == null | section == null) {Log.warn("ConfigLoader getBooleanInSection: null name or null section"); return result;}
 		if (get & file != null) {
 			result = getBoolean(getIndexInSection(section, name));
-		} else Log.warn("ConfigLoader getBooleanInSection: failed get " + name + " in " + section + " config not loaded or file == null");
+		} else Log.warn("ConfigLoader getBooleanInSection: failed get " + name + " in " + section + ", config not loaded or file == null");
 		return result;
 	}
 	
@@ -1299,7 +1419,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		if (name == null | section == null) {Log.warn("ConfigLoader getStringArrayInSection: null name or null section"); return result;}
 		if (get & file != null) {
 			result = getStringArray(getIndexInSection(section, name));
-		} else Log.warn("ConfigLoader getStringArrayInSection: failed get " + name + " in " + section + " config not loaded or file == null");
+		} else Log.warn("ConfigLoader getStringArrayInSection: failed get " + name + " in " + section + ", config not loaded or file == null");
 		return result;
 	}
 	
@@ -1314,7 +1434,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		if (name == null | section == null) {Log.warn("ConfigLoader getByteArrayInSection: null name or null section"); return result;}
 		if (get & file != null) {
 			result = getByteArray(getIndexInSection(section, name));
-		} else Log.warn("ConfigLoader getByteArrayInSection: failed get " + name + " in " + section + " config not loaded or file == null");
+		} else Log.warn("ConfigLoader getByteArrayInSection: failed get " + name + " in " + section + ", config not loaded or file == null");
 		return result;
 	}
 	
@@ -1329,7 +1449,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		if (name == null | section == null) {Log.warn("ConfigLoader getShortArrayInSection: null name or null section"); return result;}
 		if (get & file != null) {
 			result = getShortArray(getIndexInSection(section, name));
-		} else Log.warn("ConfigLoader getShortArrayInSection: failed get " + name + " in " + section + " config not loaded or file == null");
+		} else Log.warn("ConfigLoader getShortArrayInSection: failed get " + name + " in " + section + ", config not loaded or file == null");
 		return result;
 	}
 	
@@ -1344,7 +1464,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		if (name == null | section == null) {Log.warn("ConfigLoader getIntArrayInSection: null name or null section"); return result;}
 		if (get & file != null) {
 			result = getIntArray(getIndexInSection(section, name));
-		} else Log.warn("ConfigLoader getIntArrayInSection: failed get " + name + " in " + section + " config not loaded or file == null");
+		} else Log.warn("ConfigLoader getIntArrayInSection: failed get " + name + " in " + section + ", config not loaded or file == null");
 		return result;
 	}
 	
@@ -1359,7 +1479,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		if (name == null | section == null) {Log.warn("ConfigLoader getLongArrayInSection: null name or null section"); return result;}
 		if (get & file != null) {
 			result = getLongArray(getIndexInSection(section, name));
-		} else Log.warn("ConfigLoader getLongArrayInSection: failed get " + name + " in " + section + " config not loaded or file == null");
+		} else Log.warn("ConfigLoader getLongArrayInSection: failed get " + name + " in " + section + ", config not loaded or file == null");
 		return result;
 	}
 	
@@ -1374,7 +1494,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		if (name == null | section == null) {Log.warn("ConfigLoader getDoubleArrayInSection: null name or null section"); return result;}
 		if (get & file != null) {
 			result = getDoubleArray(getIndexInSection(section, name));
-		} else Log.warn("ConfigLoader getDoubleArrayInSection: failed get " + name + " in " + section + " config not loaded or file == null");
+		} else Log.warn("ConfigLoader getDoubleArrayInSection: failed get " + name + " in " + section + ", config not loaded or file == null");
 		return result;
 	}
 	
@@ -1389,7 +1509,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		if (name == null | section == null) {Log.warn("ConfigLoader getBooleanArrayInSection: null name or null section"); return result;}
 		if (get & file != null) {
 			result = getBooleanArray(getIndexInSection(section, name));
-		} else Log.warn("ConfigLoader getBooleanArrayInSection: failed get " + name + " in " + section + " config not loaded or file == null");
+		} else Log.warn("ConfigLoader getBooleanArrayInSection: failed get " + name + " in " + section + ", config not loaded or file == null");
 		return result;
 	}
 	
@@ -1537,6 +1657,18 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		public ConfigLoader recSection(int index) {
 			return getSection(index);
 		}
+		/**
+		 * получить тип данных в строке с помощью внутреннего метода getTypeData(String)
+		 * @param str строка
+		 * @return тип данных в виде {@link ru.intervi.littleconfig.ConfigLoader.TypeValue}
+		 */
+		public TypeValue recTypeData(String str) {return getTypeData(str);}
+		/**
+		 * получить тип данных в массиве строк с помощью внутреннего метода getTypeData(String[])
+		 * @param value массив строк
+		 * @return тип данных в виде {@link ru.intervi.littleconfig.ConfigLoader.TypeValue}
+		 */
+		public TypeValue recTypeData(String value[]) {return getTypeData(value);}
 	}
 	/**
 	 * инициализированный объект LoaderMethods
