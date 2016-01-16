@@ -471,10 +471,7 @@ public class EasyLogger { //класс для вывода сообщений в
 			case ERROR:
 				if (!esend) return;
 			}
-			MLData mld = new MLData();
-			mld.type = type;
-			mld.mess = str;
-			mld.date = new Date();
+			MLData mld = new MLData(type, str, new Date());
 			if (list.size() < limit) list.add(mld); else {
 				list.remove(0);
 				list.add(mld);
@@ -557,7 +554,7 @@ public class EasyLogger { //класс для вывода сообщений в
 		public String[] getAllLogArray() {
 			if (list.isEmpty()) return null;
 			String result[] = new String[list.size()];
-			for (int i = 0; i < list.size(); i++) result[i] = list.get(i).mess;
+			for (int i = 0; i < list.size(); i++) result[i] = list.get(i).MESS;
 			return result;
 		}
 		/**
@@ -570,7 +567,7 @@ public class EasyLogger { //класс для вывода сообщений в
 			Iterator<MLData> iter = list.iterator();
 			while(iter.hasNext()) {
 				MLData mld = iter.next();
-				if (mld.type.equals(type)) result.add(mld);
+				if (mld.TYPE.equals(type)) result.add(mld);
 			}
 			return result;
 		}
@@ -585,7 +582,7 @@ public class EasyLogger { //класс для вывода сообщений в
 			Iterator<MLData> iter = list.iterator();
 			while(iter.hasNext()) {
 				MLData mld = iter.next();
-				if (mld.type.equals(type)) result.add(mld.mess);
+				if (mld.TYPE.equals(type)) result.add(mld.MESS);
 			}
 			return result.toArray(new String[result.size()]);
 		}
@@ -604,18 +601,23 @@ public class EasyLogger { //класс для вывода сообщений в
 		 * класс с данными элемента виртуального лога
 		 */
 		public class MLData {
+			private MLData(TypeMess type, String mess, Date date) { //внутренний конструктор
+				TYPE = type;
+				MESS = mess;
+				DATE = date;
+			}
 			/**
 			 * тип сообщения
 			 */
-			public TypeMess type;
+			public final TypeMess TYPE;
 			/**
 			 * сообщение
 			 */
-			public String mess;
+			public final String MESS;
 			/**
 			 * дата отправки
 			 */
-			public Date date;
+			public final Date DATE;
 		}
 	}
 	
