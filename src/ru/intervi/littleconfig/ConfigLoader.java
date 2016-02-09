@@ -2,6 +2,10 @@ package ru.intervi.littleconfig;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 
 import ru.intervi.littleconfig.utils.Utils;
 import ru.intervi.littleconfig.utils.EasyLogger;
@@ -17,13 +21,25 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	/**
 	 * вызывает метод {@link ru.intervi.littleconfig.ConfigLoader#load(String)}
 	 * @param file путь к конфигу
+	 * @param gap true - читать до первого разрыва ("..."), false - весь файл
+	 * @throws NullPointerException если File == null
+	 * @throws FileNotFoundException если файл не существует
+	 * @throws IOException потоковая ошибка
 	 */
-	public ConfigLoader(String file) {load(file);}
+	public ConfigLoader(String file, boolean gap) throws NullPointerException, FileNotFoundException, IOException {
+		load(file, gap);
+	}
 	/**
 	 * вызывает метод {@link ru.intervi.littleconfig.ConfigLoader#load(File)}
 	 * @param file объект File конфига для чтения
+	 * @param gap true - читать до первого разрыва ("..."), false - весь файл
+	 * @throws NullPointerException если File == null
+	 * @throws FileNotFoundException если файл не существует
+	 * @throws IOException потоковая ошибка
 	 */
-	public ConfigLoader(File file) {load(file);}
+	public ConfigLoader(File file, boolean gap) throws NullPointerException, FileNotFoundException, IOException {
+		load(file, gap);
+	}
 	/**
 	 * вызывает метод {@link ru.intervi.littleconfig.ConfigLoader#fakeLoad(String[])}
 	 * @param value конфиг в виде массива строк
@@ -47,44 +63,47 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	}
 	
 	/**
-	 * класс для передачи результата прогрузки файла
-	 */
-	public class LoaderResult { //класс для передачи результата прогрузки файла
-		/**
-		 * загруженный когфиг
-		 */
-		public String[] list;
-		/**
-		 * удалась ли загрузка
-		 */
-		public boolean load;
-	}
-	
-	/**
 	 * прочитать конфиг (вызовет {@link ru.intervi.littleconfig.ConfigLoader#load(File)})
 	 * @param path путь к конфигу
+	 * @param gap true - читать до первого разрыва ("..."), false - весь файл
+	 * @throws NullPointerException если File == null
+	 * @throws FileNotFoundException если файл не существует
+	 * @throws IOException потоковая ошибка
 	 */
-	public void load(String path) { //загрузка конфина
+	public void load(String path, boolean gap) throws NullPointerException, FileNotFoundException, IOException { //загрузка конфина
 		if (path == null) {
-			Log.warn("ConfigLoader load(String path): null path");
-			return;
+			Log.error("ConfigLoader load(String, boolean): null path");
+			throw new NullPointerException("null String path");
 		}
-		load(new File(path));
+		load(new File(path), gap);
 	}
 	
 	/**
-	 * прочитать конфиг
+	* прочитать конфиг
 	 * @param file объект File конфига для чтения
+	 * @param gap true - читать до первого разрыва ("..."), false - весь файл
+	 * @throws NullPointerException если File == null
+	 * @throws FileNotFoundException если файл не существует
+	 * @throws IOException потоковая ошибка
 	 */
-	public void load(File file) { //загрузка конфига
+	public void load(File file, boolean gap) throws NullPointerException, FileNotFoundException, IOException { //загрузка конфига
 		if (file == null) {
-			Log.warn("ConfigLoader load(File file): null File");
-			return;
+			Log.error("ConfigLoader load(File, boolean): null file");
+			throw new NullPointerException("null object File");
 		}
-		LoaderResult result = getList(file);
-		if (result.load) {
-			this.file = result.list;
+		BufferedReader reader = new BufferedReader(new FileReader(file));
+		ArrayList<String> list = new ArrayList<String>();
+		while(reader.ready()) {
+			String line = reader.readLine();
+			if (line != null) {
+				if (gap && line.trim().equals("...")) break;
+				list.add(line);
+			}
+		}
+		reader.close();
+		if (!list.isEmpty()) {
 			get = true;
+			this.file = list.toArray(new String[list.size()]);
 		}
 	}
 	
@@ -99,22 +118,6 @@ public class ConfigLoader { //чтение конфига из файла и п�
 			if (value[i] != null) file[i] = value[i]; else file[i] = "";
 		}
 		get = true;
-	}
-	
-	/**
-	 * загрузка конфига, прямой метод (вызывается load(String f))
-	 * @param file путь к конфигу
-	 * @return результат в виде LoaderResult
-	 */
-	public LoaderResult getList(File file) { //получаем текстовый файл массивом, очищенный от комментов
-		LoaderResult result = new LoaderResult();
-		FileStringList list = new FileStringList(file);
-		list.Log.offLog();
-		if (list.isLoad()) {
-			result.list = list.getStringArray();
-			result.load = true;
-		}
-		return result;
 	}
 	
 	/**

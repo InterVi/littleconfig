@@ -20,13 +20,15 @@ public class ConfigWriter { //запись и изменение конфига
 	/**
 	 * вызывает метод {@link ru.intervi.littleconfig.ConfigWriter#setConfig(String)}
 	 * @param path путь к конфигу
+	 * @param gap true - читать до первого разрыва ("..."), false - весь файл
 	 */
-	public ConfigWriter(String path) {setConfig(path);}
+	public ConfigWriter(String path, boolean gap) {setConfig(path, gap);}
 	/**
 	 * вызывает метод {@link ru.intervi.littleconfig.ConfigWriter#setConfig(File)}
 	 * @param file объект File конфига для записи
+	 * @param gap true - читать до первого разрыва ("..."), false - весь файл
 	 */
-	public ConfigWriter(File file) {setConfig(file);}
+	public ConfigWriter(File file, boolean gap) {setConfig(file, gap);}
 	/**
 	 * вызывает методы {@link ru.intervi.littleconfig.ConfigWriter#setFakeConfig(String[])} и {@link ru.intervi.littleconfig.ConfigWriter#offWrite()}
 	 * @param value значение конфига в виде массива строк
@@ -49,22 +51,24 @@ public class ConfigWriter { //запись и изменение конфига
 	/**
 	 * указать файл конфига (вызовет {@link ru.intervi.littleconfig.ConfigWriter#setConfig(File)})
 	 * @param path путь к файлу
+	 * @param gap true - читать до первого разрыва ("---"), false - весь файл
 	 * @return true если процесс удался; false если нет
 	 */
-	public boolean setConfig(String path) { //установка конфига
+	public boolean setConfig(String path, boolean gap) { //установка конфига
 		if (path == null) {
 			Log.warn("ConfigWriter setConfig(String path): null path");
 			return false;
 		}
-		return setConfig(new File(path));
+		return setConfig(new File(path), gap);
 	}
 	
 	/**
 	 * указать файл конфига
 	 * @param path объект File конфига для записи
+	 * @param gap true - читать до первого разрыва ("..."), false - весь файл
 	 * @return true если процесс удался; false если нет
 	 */
-	public boolean setConfig(File path) { //установка конфига
+	public boolean setConfig(File path, boolean gap) { //установка конфига
 		if (path == null) {
 			Log.warn("ConfigWriter setConfig(File path): null path");
 			return false;
@@ -88,9 +92,13 @@ public class ConfigWriter { //запись и изменение конфига
 		} else { //если есть, будем его перезаписывать
 			set = true; neew = false;
 			patch = path.getAbsolutePath();
-			ConfigLoader loader = new ConfigLoader();
-			loader.load(path);
-			file = loader.getAll();
+			try {
+				ConfigLoader loader = new ConfigLoader(path, gap);
+				file = loader.getAll();
+			} catch (Exception e) {
+				Log.error("ConfigWriter setConfig(File): EXCEPTION IN ConfigLoader(String)");
+				Log.error(e);
+			}
 		}
 		return result;
 	}
@@ -105,6 +113,7 @@ public class ConfigWriter { //запись и изменение конфига
 					write.write(file[i]);
 					write.newLine();
 				}
+				neew = false;
 			} catch (Exception e) {e.printStackTrace();} finally {
 				if (write != null) {
 					try {
@@ -677,7 +686,6 @@ public class ConfigWriter { //запись и изменение конфига
 				if (array.length > 0) {
 					file = array;
 					writeFile();
-					setConfig(patch); //обновляем инфу
 				}
 			}
 		} else Log.warn("ConfigWriter: error write array, config not set");
