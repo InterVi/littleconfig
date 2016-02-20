@@ -184,7 +184,7 @@ public class EasyLogger { //класс для вывода сообщений в
 	 * @param e исключение
 	 */
 	public void error(Exception e) {
-		if (error == null) return;
+		if (e == null) return;
 		ArrayList<String> mess = new ArrayList<String>();
 		mess.add(e.toString());
 		StackTraceElement[] el = e.fillInStackTrace().getStackTrace();
