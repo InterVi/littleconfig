@@ -7,6 +7,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.io.IOException;
 
 import ru.intervi.littleconfig.utils.EasyLogger;
 
@@ -18,13 +19,15 @@ public class FileStringList { //класс-основа для создания 
 	/**
 	 * вызывает метод read(String path)
 	 * @param file путь к текстовому файлу
+	 * @throws IOException ошибка при чтении
 	 */
-	public FileStringList(String file) {read(file);}
+	public FileStringList(String file) throws IOException {read(file);}
 	/**
 	 * вызывает метод read(File file)
 	 * @param file объект File текстового файла
+	 * @throws IOException ошибка при чтении
 	 */
-	public FileStringList(File file) {read(file);}
+	public FileStringList(File file) throws IOException {read(file);}
 	
 	/**
 	 * используемый логгер для вывода сообщений
@@ -40,8 +43,9 @@ public class FileStringList { //класс-основа для создания 
 	/**
 	 * чтение файла
 	 * @param path путь к файлу
+	 * @throws IOException ошибка при чтении
 	 */
-	public void read(String path) { //чтение файла
+	public void read(String path) throws IOException { //чтение файла
 		if (path == null) {Log.warn("FileStringList: error read, null path"); return;}
 		read(new File(path));
 	}
@@ -49,20 +53,19 @@ public class FileStringList { //класс-основа для создания 
 	/**
 	 * чтение файла
 	 * @param file читаемый объект File
+	 * @throws IOException ошибка при чтении
 	 */
-	public void read(File file) { //чтение файла
+	public void read(File file) throws IOException { //чтение файла
 		if (file == null) {Log.warn("FileStringList: error read, null file"); return;}
 		if (file.isFile()) {
 			if (!list.isEmpty()) list.clear();
-			try {
-				BufferedReader reader = new BufferedReader(new FileReader(file));
-				while(reader.ready()) {
-					String line = reader.readLine();
-					if (line != null) list.add(line);
-				}
-				reader.close();
-				load = true;
-			} catch (Exception e) {e.printStackTrace(); load = false;}
+			BufferedReader reader = new BufferedReader(new FileReader(file));
+			while(reader.ready()) {
+				String line = reader.readLine();
+				if (line != null) list.add(line);
+			}
+			reader.close();
+			load = true;
 		} else {
 			Log.warn("FileStringList: file " + file + " not found");
 			load = false;
@@ -72,8 +75,9 @@ public class FileStringList { //класс-основа для создания 
 	/**
 	 * запись в файл
 	 * @param path путь к файлу
+	 * @throws IOException ошибка при записи
 	 */
-	public void write(String path) { //запись файла
+	public void write(String path) throws IOException { //запись файла
 		if (path == null) {Log.warn("FileStringList: error write, null path"); return;}
 		write(new File(path));
 	}
@@ -81,28 +85,21 @@ public class FileStringList { //класс-основа для создания 
 	/**
 	 * запись в файл
 	 * @param file записываемый объект File
+	 * @throws IOException ошибка при записи
 	 */
-	public void write(File file) { //запись файла
+	public void write(File file) throws IOException { //запись файла
 		if (file == null) {Log.warn("FileStringList: error write, null write"); return;}
 		if (!list.isEmpty()) {
-			BufferedWriter writer = null;
-			try {
-				writer = new BufferedWriter(new FileWriter(file));
-				Iterator<String> iter = list.iterator();
-				while(iter.hasNext()) {
-					String line = iter.next();
-					if (line != null) {
-						writer.write(line);
-						writer.newLine();
-					}
-				}
-			} catch (Exception e) {e.printStackTrace();} finally {
-				if (writer != null) {
-					try {
-						writer.close();
-					} catch(Exception e) {e.printStackTrace();}
+			BufferedWriter writer = new BufferedWriter(new FileWriter(file));
+			Iterator<String> iter = list.iterator();
+			while(iter.hasNext()) {
+				String line = iter.next();
+				if (line != null) {
+					writer.write(line);
+					writer.newLine();
 				}
 			}
+			writer.close();
 		} else Log.warn("FileStringList: empty list " + file);
 	}
 		

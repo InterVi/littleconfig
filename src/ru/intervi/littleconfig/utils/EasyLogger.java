@@ -8,6 +8,7 @@ import java.io.BufferedWriter;
 import java.lang.StackTraceElement;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.EventObject;
 
 /**
  * простой логгер для вывода сообщений в консоль и записи в файл
@@ -115,6 +116,7 @@ public class EasyLogger { //класс для вывода сообщений в
 	private boolean sinfo = true; //вывод инфо сообщений
 	private boolean swarn = true; //вывод предупреждений
 	private boolean serror = true; //вывод ошибок
+	private ArrayList<PutListener> plist = new ArrayList<PutListener>(); //список слушателей
 	
 	/**
 	 * вывод инофрмационного сообщения в консоль и в лог
@@ -126,6 +128,7 @@ public class EasyLogger { //класс для вывода сообщений в
 		if (send & sinfo) System.out.println(mess);
 		ToFile.log(mess, TypeMess.INFO);
 		MemoryLog.put(mess, TypeMess.INFO);
+		sendToList(mess, TypeMess.INFO);
 	}
 	
 	/**
@@ -147,6 +150,7 @@ public class EasyLogger { //класс для вывода сообщений в
 		if (send & swarn) System.out.println(mess);
 		ToFile.log(mess, TypeMess.WARN);
 		MemoryLog.put(mess, TypeMess.WARN);
+		sendToList(mess, TypeMess.WARN);
 	}
 	
 	/**
@@ -168,6 +172,7 @@ public class EasyLogger { //класс для вывода сообщений в
 		if (send & serror) System.out.println(mess);
 		ToFile.log(mess, TypeMess.ERROR);
 		MemoryLog.put(mess, TypeMess.ERROR);
+		sendToList(mess, TypeMess.ERROR);
 	}
 	
 	/**
@@ -198,6 +203,31 @@ public class EasyLogger { //класс для вывода сообщений в
 			MemoryLog.put(str, TypeMess.ERROR);
 		}
 	}
+	
+	private void sendToList(String mess, TypeMess type) { //рассылка события по слушателям
+		Iterator<PutListener> iter = plist.iterator();
+		while(iter.hasNext()) iter.next().putToLog(new PutEvent(this, (type.toString() + " mess"), type, mess, new Date()));
+	}
+	
+	/**
+	 * добавить слушатель в список обработки
+	 * @param pl реализованный интерфейс {@link ru.intervi.littleconfig.utils.EasyLogger.PutListener} слушателя
+	 */
+	public void addListener(PutListener pl) {if (pl != null) plist.add(pl);}
+	/**
+	 * удалить слушатель из списка
+	 * @param pl реализованный интерфейс {@link ru.intervi.littleconfig.utils.EasyLogger.PutListener} слушателя
+	 */
+	public void removeListener(PutListener pl) {if (pl != null) plist.remove(pl);}
+	/**
+	 * очистить список слушателей
+	 */
+	public void clearListeners() {plist.clear();}
+	/**
+	 * получить размер списка слушателей
+	 * @return размер списка слушателей
+	 */
+	public final int getListenersSize() {return plist.size();}
 	
 	/**
 	 * включить вывод всех сообщений в консоль
@@ -607,7 +637,7 @@ public class EasyLogger { //класс для вывода сообщений в
 				DATE = date;
 			}
 			/**
-			 * тип сообщения
+			 * тип сообщения {@link ru.intervi.littleconfig.utils.EasyLogger.TypeMess}
 			 */
 			public final TypeMess TYPE;
 			/**
@@ -619,6 +649,69 @@ public class EasyLogger { //класс для вывода сообщений в
 			 */
 			public final Date DATE;
 		}
+	}
+	
+	/**
+	 * класс события добавления сообщения в лог
+	 */
+	@SuppressWarnings("serial")
+	public class PutEvent extends EventObject {
+		//внутренний конструктор
+		private PutEvent(Object source, String title, TypeMess type, String mess, Date date) {
+			super(source);
+			this.type = type;
+			this.mess = mess;
+			this.date = date;
+			this.title = title;
+			this.source = source;
+		}
+		private TypeMess type;
+		private String mess, title;
+		private Date date;
+		private Object source;
+		
+		/**
+		 * получить тип сообщения {@link ru.intervi.littleconfig.utils.EasyLogger.TypeMess}
+		 * @return тип сообщения
+		 */
+		public final TypeMess getType() {return type;}
+		/**
+		 * получить название события
+		 * @return название события
+		 */
+		public final String getTitle() {return title;}
+		/**
+		 * получить сообщение, отправленное в лог
+		 * @return сообщение
+		 */
+		public final String getMess() {return mess;}
+		/**
+		 * получить дату отправки сообщения
+		 * @return дата отправки сообщения
+		 */
+		public final Date getDate() {return date;}
+		/**
+		 * получить объект класса EasyLogger
+		 * @return объект класса EasyLogger
+		 */
+		public final Object getSource() {return source;}
+		
+		@Override
+		public String toString() { //переопределение метода для красивого вывода
+			return "title: " + title + ", type: " + type.toString()
+					+ ", mess: " + mess + ", date: " + String.valueOf(date.getTime());
+		}
+	}
+	
+	/**
+	 * интерфейс слушателя
+	 */
+	public interface PutListener {
+		/**
+		 * событие добавления сообщения в лог
+		 * @param event класс события {@link ru.intervi.littleconfig.utils.EasyLogger.PutEvent}
+		 */
+		public void putToLog(PutEvent event);
 	}
 	
 	/**

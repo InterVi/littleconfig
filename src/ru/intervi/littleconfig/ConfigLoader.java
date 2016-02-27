@@ -19,7 +19,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	 */
 	public ConfigLoader() {}
 	/**
-	 * вызывает метод {@link ru.intervi.littleconfig.ConfigLoader#load(String)}
+	 * вызывает метод {@link ru.intervi.littleconfig.ConfigLoader#load(String, boolean)}
 	 * @param file путь к конфигу
 	 * @param gap true - читать до первого разрыва ("..."), false - весь файл
 	 * @throws NullPointerException если File == null
@@ -30,7 +30,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		load(file, gap);
 	}
 	/**
-	 * вызывает метод {@link ru.intervi.littleconfig.ConfigLoader#load(File)}
+	 * вызывает метод {@link ru.intervi.littleconfig.ConfigLoader#load(File, boolean)}
 	 * @param file объект File конфига для чтения
 	 * @param gap true - читать до первого разрыва ("..."), false - весь файл
 	 * @throws NullPointerException если File == null
@@ -63,7 +63,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	}
 	
 	/**
-	 * прочитать конфиг (вызовет {@link ru.intervi.littleconfig.ConfigLoader#load(File)})
+	 * прочитать конфиг (вызовет {@link ru.intervi.littleconfig.ConfigLoader#load(File, boolean)})
 	 * @param path путь к конфигу
 	 * @param gap true - читать до первого разрыва ("..."), false - весь файл
 	 * @throws NullPointerException если File == null
@@ -110,9 +110,10 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	/**
 	 * фейковая загрузка данных
 	 * @param value массив строк, в котором представлен конфиг
+	 * @throws NullPointerException если массив строк == null (null строки внутри массива будут пропускатся)
 	 */
-	public void fakeLoad(String[] value) { //фейковая загрузка (установка значения из массива)
-		if (value == null) return;
+	public void fakeLoad(String[] value) throws NullPointerException { //фейковая загрузка (установка значения из массива)
+		if (value == null) throw new NullPointerException("null String[] value");
 		file = new String[value.length];
 		for (int i = 0; i < value.length; i++) { //чистка от null'ов
 			if (value[i] != null) file[i] = value[i]; else file[i] = "";
@@ -604,7 +605,8 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		IsArray a = isArray(index);
 		if (a.array & !a.empty) {
 			if (a.skobka) { //парсинг данных из однострочного массива
-				String str = a.clear.content.substring(1, (a.clear.content.length()-1)).trim(); //отрезаем скобки
+				String cl = a.clear.content;
+				String str = cl.substring(1, (cl.length()-1)).trim(); //отрезаем скобки
 				if (Utils.numChars(str, '"') < 2 & Utils.numChars(str, '\'') < 2) { //если кавычки не применялись
 					result = str.split(",");
 					for (int i = 0; i < result.length; i++) {
@@ -627,7 +629,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 							continue;
 						}
 						if (f == -1) { //поиск первой кавычки
-							if (c[i] == '"') f = i; else if (c[i] == '\'') f = i;
+							if (c[i] == '"' | c[i] == '\'') f = i;
 						} else { //поиск второй кавычки и запятой
 							if (c[i] == '"' & c[f] == '"' || c[i] == '\'' & c[f] == '\'') {
 								int z = -1;
@@ -637,7 +639,10 @@ public class ConfigLoader { //чтение конфига из файла и п�
 										break;
 									}
 									if (c[n] == ' ') continue;
-									if (c[n] == ',') {
+									else if (c[n] == ']' & (n+1) == c.length) {
+										z = n;
+										break;
+									} else if (c[n] == ',') {
 										z = n;
 										break;
 									} else break; //если идет другой символ - значит кавычка не закрывающая
@@ -648,9 +653,21 @@ public class ConfigLoader { //чтение конфига из файла и п�
 									i = z;
 									continue;
 								}
-							} else continue;
+								/*
+								 * если это последняя интерация
+								 * вложенный цикл for не срабатывает на последней интерации
+								 * из-за условия n = (i+1), противоречащего n < c.length
+								 */
+								if ((i+1) == c.length) {
+									list.add(str.substring((f+1), i));
+									break;
+								}
+							}
 							//если это последняя интерация и нет закрывающей кавычки
-							if ((i+1) == c.length) list.add(str.substring(f, c.length));
+							if ((i+1) == c.length) {
+								list.add(str.substring((f+1), c.length));
+								break;
+							}
 						}
 						if (f == -1 && c[i] != ' ' | c[i] != '"' | c[i] != '\'' | c[i] != ',') {
 							//если до первой кавычки попался сторонний символ - значит элемент не заключен в кавычки
@@ -946,53 +963,63 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		TypeValue result = TypeValue.NULL;
 		if (str == null) {Log.warn("ConfigLoader getTypeData: null str"); return result;}
 		if (str.isEmpty()) return result;
-		int l = str.length();
-		if (str.matches("[0-9]*") && l <= 19) result = TypeValue.LONG; //соответствует long
-		else if (str.matches("[0-9-]*") && str.lastIndexOf('-') == 0 && l <= 20) result = TypeValue.LONG; //long
-		else if (str.matches("[0-9.[E]]") | str.matches("[0-9.-[E]")) { //предварительные проверки данных
-			int d = str.indexOf('.');
-			if (d > 0 & str.indexOf('E') > d & Utils.numChars(str, 'E') == 1
-					||
-					str.lastIndexOf('-') == 0 & d > 0 & str.indexOf('E') > d & Utils.numChars(str, 'E') == 1) {
-				boolean f = false;
-				boolean dd = false;
-				try { //проверка принадлежности к типам путем парсинга
-					Float.parseFloat(str);
-					f = true;
-				} catch(Exception e) {f = false;};
-				if (!f) {
-					try {
-						Double.parseDouble(str);
-						dd = true;
-					} catch(Exception e) {dd = false;}
-				}
-				if (f) result = TypeValue.FLOAT;
-				else if (dd) result = TypeValue.DOUBLE;
-			}
-		}
-		else if (str.equalsIgnoreCase("true") | str.equalsIgnoreCase("false")) result = TypeValue.BOOLEAN; //проверка на булеву
-		else result = TypeValue.STRING; //проверки не пройдены - значит строка
-		if (result.equals(TypeValue.LONG)) { //дальнейшее определение путем проверки диапазона значений
-			try {
-				long test = Long.parseLong(str);
-				if (test >= -128 & test <= 127) result = TypeValue.BYTE;
-				else if (test >= -32768 & test <= 32767) result = TypeValue.SHORT;
-				else if (test >= -2147483648 & test <= 2147483647) result = TypeValue.INT;
-			} catch(Exception e) {result = TypeValue.STRING;}
-		}
+		try {
+			double t = Double.parseDouble(str); //вычисление по диапазонам значений
+			if (t >= Byte.MIN_VALUE & t <= Byte.MAX_VALUE) result = TypeValue.BYTE;
+			else if (t >= Short.MIN_VALUE & t <= Short.MAX_VALUE) result = TypeValue.SHORT;
+			else if (t >= Integer.MIN_VALUE & t <= Integer.MAX_VALUE) result = TypeValue.INT;
+			else if (t >= Long.MIN_VALUE & t <= Long.MAX_VALUE) result = TypeValue.LONG;
+			else if (t >= Float.MIN_VALUE & t <= Float.MAX_VALUE) result = TypeValue.FLOAT;
+			else result = TypeValue.DOUBLE;
+		} catch(NumberFormatException e) {
+			//проверка на булеву
+			if (str.equalsIgnoreCase("true") | str.equalsIgnoreCase("false")) result = TypeValue.BOOLEAN;
+			else result = TypeValue.STRING;
+		} catch(Exception e) {Log.error(e); result = TypeValue.NULL;}
 		return result;
 	}
 	
+	@SuppressWarnings("incomplete-switch")
 	private TypeValue getTypeData(String value[]) { //узнать тип данных в массиве
 		TypeValue result = TypeValue.NULL;
 		if (value == null) {Log.warn("ConfigLoader getTypeValue: null array"); return result;}
 		for (int i = 0; i < value.length; i++) {
 			TypeValue t = getTypeData(value[i]);
-			if (i > 0 && !t.equals(result)) {
-				result = TypeValue.STRING;
-				break;
-			}
+			if (i > 0 && !t.equals(result)) { //проверка на численный тип, в таком случае он повышается
+				if (result.ordinal() >= 1 & result.ordinal() <= 6 && t.ordinal() >= 1 & t.ordinal() <= 6) result = t;
+				else {
+					result = TypeValue.STRING;
+					break;
+				}
+			} else if (i == 0) result = t;
 			result = t;
+		}
+		switch (result) { //на основе анализа строк указывается тип массива
+		case NULL:
+			break;
+		case STRING:
+			result = TypeValue.STRING_ARRAY;
+			break;
+		case BYTE:
+			result = TypeValue.BYTE_ARRAY;
+			break;
+		case SHORT:
+			result = TypeValue.SHORT_ARRAY;
+			break;
+		case INT:
+			result = TypeValue.INT_ARRAY;
+			break;
+		case LONG:
+			result = TypeValue.LONG_ARRAY;
+			break;
+		case FLOAT:
+			result = TypeValue.FLOAT_ARRAY;
+			break;
+		case DOUBLE:
+			result = TypeValue.DOUBLE_ARRAY;
+			break;
+		case BOOLEAN:
+			result = TypeValue.BOOLEAN_ARRAY;
 		}
 		return result;
 	}
@@ -1009,10 +1036,9 @@ public class ConfigLoader { //чтение конфига из файла и п�
 			int index = getIndexNoSection(name);
 			if (index > -1) {
 				ClearResult r = clearStr(file[index]);
-				if (!r.broken) result = getTypeData(r.content);
+				if (!r.broken & r.firstsq == -1) result = getTypeData(r.content);
 				else if (isArray(index).array) result = getTypeData(getStringArray(index));
-				else if (isSection(name)) result = TypeValue.SECTION;
-			}
+			} else if (isSection(name)) result = TypeValue.SECTION;
 		} else Log.warn("ConfigLoader getType: failed get " + name + ", config not loaded or file == null");
 		return result;
 	}
@@ -1266,8 +1292,10 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		ConfigLoader loader = new ConfigLoader();
 		if (l > 0) {
 			String sec[] = new String[l];
-			for (int i = index; i < (index+l) & i < file.length; i++) sec[(i-index)] = file[index];
-			loader.fakeLoad(sec);
+			for (int i = index; i < (index+l) & i < file.length; i++) sec[(i-index)] = file[i];
+			try {
+				loader.fakeLoad(sec);
+			} catch(Exception e) {Log.error(e);}
 		}
 		return loader;
 	}

@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.io.IOException;
 
 import ru.intervi.littleconfig.ConfigLoader.ClearResult;
 import ru.intervi.littleconfig.utils.EasyLogger;
@@ -18,24 +19,25 @@ public class ConfigWriter { //запись и изменение конфига
 	 */
 	public ConfigWriter() {}
 	/**
-	 * вызывает метод {@link ru.intervi.littleconfig.ConfigWriter#setConfig(String)}
+	 * вызывает метод {@link ru.intervi.littleconfig.ConfigWriter#setConfig(String, boolean)}
 	 * @param path путь к конфигу
 	 * @param gap true - читать до первого разрыва ("..."), false - весь файл
+	 * @throws IOException ошибка при чтении
 	 */
-	public ConfigWriter(String path, boolean gap) {setConfig(path, gap);}
+	public ConfigWriter(String path, boolean gap) throws IOException {setConfig(path, gap);}
 	/**
-	 * вызывает метод {@link ru.intervi.littleconfig.ConfigWriter#setConfig(File)}
+	 * вызывает метод {@link ru.intervi.littleconfig.ConfigWriter#setConfig(File, boolean)}
 	 * @param file объект File конфига для записи
 	 * @param gap true - читать до первого разрыва ("..."), false - весь файл
+	 * @throws IOException ошибка при чтении
 	 */
-	public ConfigWriter(File file, boolean gap) {setConfig(file, gap);}
+	public ConfigWriter(File file, boolean gap) throws IOException {setConfig(file, gap);}
 	/**
 	 * вызывает методы {@link ru.intervi.littleconfig.ConfigWriter#setFakeConfig(String[])} и {@link ru.intervi.littleconfig.ConfigWriter#offWrite()}
 	 * @param value значение конфига в виде массива строк
 	 */
 	public ConfigWriter(String value[]) {
 		setFakeConfig(value);
-		offWrite();
 	}
 	
 	/**
@@ -46,15 +48,15 @@ public class ConfigWriter { //запись и изменение конфига
 	private String file[] = null; //конфиг
 	private boolean set = false, neew = true; //установлен ли конфиг и новый ли он
 	private String patch = null; //путь к файлу
-	private boolean wr = true; //записывать ли изменения
 	
 	/**
-	 * указать файл конфига (вызовет {@link ru.intervi.littleconfig.ConfigWriter#setConfig(File)})
+	 * указать файл конфига (вызовет {@link ru.intervi.littleconfig.ConfigWriter#setConfig(File, boolean)})
 	 * @param path путь к файлу
 	 * @param gap true - читать до первого разрыва ("---"), false - весь файл
 	 * @return true если процесс удался; false если нет
+	 * @throws IOException ошибка при чтении
 	 */
-	public boolean setConfig(String path, boolean gap) { //установка конфига
+	public boolean setConfig(String path, boolean gap) throws IOException { //установка конфига
 		if (path == null) {
 			Log.warn("ConfigWriter setConfig(String path): null path");
 			return false;
@@ -67,96 +69,65 @@ public class ConfigWriter { //запись и изменение конфига
 	 * @param path объект File конфига для записи
 	 * @param gap true - читать до первого разрыва ("..."), false - весь файл
 	 * @return true если процесс удался; false если нет
+	 * @throws IOException ошибка при чтении
 	 */
-	public boolean setConfig(File path, boolean gap) { //установка конфига
+	public boolean setConfig(File path, boolean gap) throws IOException { //установка конфига
 		if (path == null) {
 			Log.warn("ConfigWriter setConfig(File path): null path");
 			return false;
 		}
-		if (!path.canWrite()) {
+		if (path.isFile() && !path.canWrite()) {
 			Log.warn("ConfigWriter setConfig: cannot writable");
 			return false;
 		}
 		boolean result = false;
 		result = path.isFile();
 		if (!result) { //создаем конфиг, если его нет
-			try {
-				if (!path.createNewFile()) Log.warn("ConfigWriter: cannot create " + path.getAbsolutePath()); else {
-					set = true;
-					patch = path.getAbsolutePath();
-					neew = true;
-					file = null;
-					result = true;
-				}
-			} catch (Exception e) {e.printStackTrace();}
+			if (!path.createNewFile()) Log.warn("ConfigWriter: cannot create " + path.getAbsolutePath()); else {
+				set = true;
+				patch = path.getAbsolutePath();
+				neew = true;
+				file = null;
+				result = true;
+			}
 		} else { //если есть, будем его перезаписывать
 			set = true; neew = false;
 			patch = path.getAbsolutePath();
-			try {
-				ConfigLoader loader = new ConfigLoader(path, gap);
-				file = loader.getAll();
-			} catch (Exception e) {
-				Log.error("ConfigWriter setConfig(File): EXCEPTION IN ConfigLoader(String)");
-				Log.error(e);
-			}
+			ConfigLoader loader = new ConfigLoader(path, gap);
+			file = loader.getAll();
 		}
 		return result;
 	}
 	
-	private void writeFile() { //запись массива file
-		if (!wr) return;
+	/**
+	 * записать изменения в файл
+	 * @throws IOException ошибка при записи
+	 */
+	public void writeFile() throws IOException { //запись массива file
 		if (set && file != null & patch != null) {
-			BufferedWriter write = null;
-			try { //запись массива
-				write = new BufferedWriter(new FileWriter(patch));
-				for (int i = 0; i < file.length; i++) {
-					write.write(file[i]);
-					write.newLine();
-				}
-				neew = false;
-			} catch (Exception e) {e.printStackTrace();} finally {
-				if (write != null) {
-					try {
-						write.close();
-					} catch(Exception e) {e.printStackTrace();}
-				}
+			BufferedWriter write = new BufferedWriter(new FileWriter(patch));
+			//запись массива
+			for (int i = 0; i < file.length; i++) {
+				write.write(file[i]);
+				write.newLine();
 			}
+			write.close();
+			neew = false;
 		} else Log.warn("ConfigWriter: cannot write file, config file not set");
-	}
-	
-	/**
-	 * выключить запись изменений в файл
-	 */
-	public void offWrite() {
-		wr = false;
-	}
-	
-	/**
-	 * включить запись изменений в файл
-	 * @return true если удалось; false если конфиг не установлен
-	 */
-	public boolean onWrite() {
-		if (patch != null) {
-			wr = true;
-			return true;
-		} else return false;
 	}
 	
 	/**
 	 * установить содержимое конфига (будет считатся, что конфиг установлен)
 	 * @param value массив строк с конфигом
+	 * @throws NullPointerException если массив строк == null (null строки внутри массива будут пропускатся)
 	 */
-	public void setFakeConfig(String[] value) {
-		file = value;
+	public void setFakeConfig(String[] value) throws NullPointerException {
+		if (value == null) throw new NullPointerException("null String[] value");
+		file = new String[value.length];
+		for (int i = 0; i < value.length; i++) { //чистка от null'ов
+			if (value[i] != null) file[i] = value[i]; else file[i] = "";
+		}
 		set = true;
-	}
-	
-	/**
-	 * включена ли запись изменений в файл
-	 * @return true если да; false если нет
-	 */
-	public final boolean getWriteStatus() {
-		return wr;
 	}
 	
 	private void setOption(String name, String value, int ind) { //запись значения переменной
@@ -168,7 +139,6 @@ public class ConfigWriter { //запись и изменение конфига
 			if (neew) { //если файл новый, то просто пишем в него опцию
 				file = new String[1];
 				file[0] = name + ": " + value;
-				writeFile();
 				neew = false;
 			} else if (file != null) { //если конфиг уже есть, заменяем значение и перезаписываем массив строк
 				if (file.length > 0) {
@@ -185,13 +155,11 @@ public class ConfigWriter { //запись и изменение конфига
 						String rep = p + r.name + ": " + value; //подменяем значение
 						if (r.com != null) rep += " #" + r.com; //возвращаем комментарий, если он был
 						file[index] = rep;
-						writeFile();
 					} else { //если нет, то добавляем ее в конфиг
 						String rep[] = new String[(file.length+1)];
 						for (int i = 0; i < file.length; i++) rep[i] = file[i];
 						rep[(rep.length-1)] = name + ": " + value;
 						file = rep;
-						writeFile();
 					}
 				} else Log.warn("ConfigWriter: cannot write var " + name + ", var not found");
 			} else Log.warn("ConfigWriter: error write var " + name + ", config file not set");
@@ -232,7 +200,6 @@ public class ConfigWriter { //запись и изменение конфига
 					}
 				}
 				neew = false;
-				writeFile();
 			} else if (file != null) { //если нужно заменить значение в старом конфиге
 				ConfigLoader loader = new ConfigLoader();
 				loader.fakeLoad(file);
@@ -303,7 +270,6 @@ public class ConfigWriter { //запись и изменение конфига
 					}
 					file = newfile.toArray(new String[newfile.size()]);
 				}
-				writeFile();
 			} else Log.warn("ConfigWriter: error write array " + name + ", config file not set");
 		} else Log.warn("ConfigWriter: error write array " + name + ", config file not set");
 	}
@@ -363,7 +329,6 @@ public class ConfigWriter { //запись и изменение конфига
 				file[1] = "  " + name + ": " + value;
 				neew = false;
 			}
-			writeFile();
 		} else Log.warn("ConfigWriter: error write var " + name + " in section " + section + ", config file not set");
 	}
 	
@@ -472,7 +437,6 @@ public class ConfigWriter { //запись и изменение конфига
 					neew = false;
 				}
 			}
-			writeFile();
 		} else Log.warn("ConfigWriter: error write array " + name + " in section " + section + ", config file not set");
 	}
 	
@@ -489,7 +453,6 @@ public class ConfigWriter { //запись и изменение конфига
 					for (int i = 0; i < index; i++) newfile.add(file[i]);
 					for (int i = (index+1); i < file.length; i++) newfile.add(file[i]);
 					file = newfile.toArray(new String[newfile.size()]);
-					writeFile();
 				} else Log.warn("ConfigWriter: error delete var " + name + ", var not found");
 			} else Log.warn("ConfigWriter: error delete var " + name + ", config file not found");
 		} else Log.warn("ConfigWriter: error delete var " + name + ", config file not set");
@@ -521,7 +484,6 @@ public class ConfigWriter { //запись и изменение конфига
 						for (int i = 0; i < index; i++) newfile.add(file[i]);
 						for (int i = (index+leng+1); i < file.length; i++) newfile.add(file[i]);
 						file = newfile.toArray(new String[newfile.size()]);
-						writeFile();
 					}
 				} else Log.warn("ConfigWriter: error delete array " + name + ", array not found");
 			} else Log.warn("ConfigWriter: error delete array " + name + ", config file not found");
@@ -596,7 +558,6 @@ public class ConfigWriter { //запись и изменение конфига
 					for (int i = 0; i < index; i++) newfile.add(file[i]);
 					for (int i = (index+leng); i < file.length; i++) newfile.add(file[i]);
 					file = newfile.toArray(new String[newfile.size()]);
-					writeFile();
 				} else Log.warn("ConfigWriter: error delete section " + section + ", section not found");
 			} else Log.warn("ConfigWriter: error delete section " + section + ", config file not found");
 		} else Log.warn("ConfigWriter: error delete section " + section + ", config file not set");
@@ -657,10 +618,6 @@ public class ConfigWriter { //запись и изменение конфига
 			delArray(name, index);
 		}
 		/**
-		 * записать данные из памяти в файл
-		 */
-		public void write() {writeFile();}
-		/**
 		 * получить значение конфига из памяти
 		 * @return конфиг в виде массива строк
 		 */
@@ -675,19 +632,4 @@ public class ConfigWriter { //запись и изменение конфига
 	 * инициализированный объект WriterMethods
 	 */
 	public WriterMethods Methods = new WriterMethods();
-	
-	/**
-	 * записать массив строк в конфиг как есть (создаст новый файл или полностью перепишет старый)
-	 * @param array массив строк
-	 */
-	public void writeArray(String[] array) { //запись массива строк в файл как есть (создает новый конфиг или полностью перезаписывает текущий)
-		if (set && patch != null) {
-			if (array != null) {
-				if (array.length > 0) {
-					file = array;
-					writeFile();
-				}
-			}
-		} else Log.warn("ConfigWriter: error write array, config not set");
-	}
 }
