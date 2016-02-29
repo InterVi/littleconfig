@@ -48,6 +48,7 @@ public class ConfigWriter { //запись и изменение конфига
 	private String file[] = null; //конфиг
 	private boolean set = false, neew = true; //установлен ли конфиг и новый ли он
 	private String patch = null; //путь к файлу
+	private boolean tf = false; //использовалась ли фейковая загрузка
 	
 	/**
 	 * указать файл конфига (вызовет {@link ru.intervi.littleconfig.ConfigWriter#setConfig(File, boolean)})
@@ -128,6 +129,15 @@ public class ConfigWriter { //запись и изменение конфига
 			if (value[i] != null) file[i] = value[i]; else file[i] = "";
 		}
 		set = true;
+		tf = true;
+	}
+	
+	/**
+	 * использовалась ли фейковая установка конфига {@link ru.intervi.littleconfig.ConfigWriter#setFakeConfig(String[])}
+	 * @return true если да; false если нет
+	 */
+	public final boolean isFakeSet() {
+		return tf;
 	}
 	
 	private void setOption(String name, String value, int ind) { //запись значения переменной
@@ -135,7 +145,7 @@ public class ConfigWriter { //запись и изменение конфига
 			Log.warn("ConfigWriter setOption: null name or null value");
 			return;
 		}
-		if (set && patch != null) {
+		if (set) {
 			if (neew) { //если файл новый, то просто пишем в него опцию
 				file = new String[1];
 				file[0] = name + ": " + value;
@@ -180,7 +190,7 @@ public class ConfigWriter { //запись и изменение конфига
 			Log.warn("ConfigWriter setArray: null name or null value");
 			return;
 		}
-		if (set && patch != null) {
+		if (set) {
 			if (neew) { //есди записываем в новый конфиг
 				if (skobka) { //если значения в квадратных скобках
 					String send = name + ": ['" + value[0] + '\'';
@@ -294,7 +304,7 @@ public class ConfigWriter { //запись и изменение конфига
 		if (name == null) {Log.warn("ConfigWriter setOptionInSection: null name"); return;}
 		if (value == null) {Log.warn("ConfigWriter setOptionInSection: null value"); return;}
 		if (section == null) {Log.warn("ConfigWriter setOptionInSection: null section"); return;}
-		if (set && patch != null) {
+		if (set) {
 			if (!neew) { //если правится старый конфиг
 				if (file == null) {Log.warn("ConfigWriter : error write var " + name + " in section " + section + ", null file");}
 				ConfigLoader loader = new ConfigLoader();
@@ -343,7 +353,7 @@ public class ConfigWriter { //запись и изменение конфига
 		if (name == null) {Log.warn("ConfigWriter setArrayInSection: null name"); return;}
 		if (value == null) {Log.warn("ConfigWriter setArrayInSection: null value"); return;}
 		if (section == null) {Log.warn("ConfigWriter setArrayInSection: null section"); return;}
-		if (set && patch != null) {
+		if (set) {
 			if (!neew) { //если редактируется старый конфиг
 				if (file == null) {Log.warn("ConfigWriter : error write array " + name + " in section " + section + ", null file");}
 				ConfigLoader loader = new ConfigLoader();
@@ -442,7 +452,7 @@ public class ConfigWriter { //запись и изменение конфига
 	
 	private void delOption(String name, int ind) { //удаление опции из конфига
 		if (name == null) {Log.warn("ConfigWriter delOption: error, null name"); return;}
-		if (set && patch != null) {
+		if (set) {
 			if (!neew) {
 				if (file == null) {Log.warn("ConfigWriter delOption: error, null file"); return;}
 				ConfigLoader loader = new ConfigLoader();
@@ -468,7 +478,7 @@ public class ConfigWriter { //запись и изменение конфига
 	
 	private void delArray(String name, int ind) { //удаление массива
 		if (name == null) {Log.warn("ConfigWriter delArray: error, null name"); return;}
-		if (set && patch != null) {
+		if (set) {
 			if (!neew) {
 				if (file == null) {Log.warn("ConfigWriter delArray: error, null file"); return;}
 				ConfigLoader loader = new ConfigLoader();
@@ -506,7 +516,7 @@ public class ConfigWriter { //запись и изменение конфига
 	public void delOptionInSection(String name, String section) { //удаление параметра из секции
 		if (name == null) {Log.warn("ConfigWriter delOptionInSection: error, null name"); return;}
 		if (section == null) {Log.warn("ConfigWriter delOptionInSection: error, null section"); return;}
-		if (set && patch != null) {
+		if (set) {
 			if (!neew) {
 				if (file == null) {Log.warn("ConfigWriter delOptionInSection: error, null file"); return;}
 				ConfigLoader loader = new ConfigLoader();
@@ -527,7 +537,7 @@ public class ConfigWriter { //запись и изменение конфига
 	public void delArrayInSection(String name, String section) { //удаление массива из секции
 		if (name == null) {Log.warn("ConfigWriter delArrayInSection: error, null name"); return;}
 		if (section == null) {Log.warn("ConfigWriter delArrayInSection: error, null section"); return;}
-		if (set && patch != null) {
+		if (set) {
 			if (!neew) {
 				if (file == null) {Log.warn("ConfigWriter delArrayInSection: error, null file"); return;}
 				ConfigLoader loader = new ConfigLoader();
@@ -546,7 +556,7 @@ public class ConfigWriter { //запись и изменение конфига
 	 */
 	public void delSection(String section) {
 		if (section == null) {Log.warn("ConfigWriter delSection: error, null section"); return;}
-		if (set && patch != null) {
+		if (set) {
 			if (!neew) {
 				if (file == null) {Log.warn("ConfigWriter delSection: error, null file"); return;}
 				ConfigLoader loader = new ConfigLoader();
@@ -576,6 +586,26 @@ public class ConfigWriter { //запись и изменение конфига
 			} else Log.warn("ConfigWriter: error delete config file, not found");
 		} else Log.warn("ConfigWriter: error delete config file, not set");
 		return result;
+	}
+	
+	/**
+	 * получить ConfigLoader с секцией из памяти данного экземпляра ConfigWriter
+	 * @return ConfigLoader с загруженной секцикй либо null в случае ошибки, либо пустой класс (необходимо проверять через {@link ru.intervi.littleconfig.ConfigLoader#isLoad()})
+	 */
+	public ConfigLoader getLoaderSection() {
+		if (!set | file == null) {Log.warn("ConfigWriter getLoaderSection: config not set or file == null"); return null;}
+		if (file.length == 0) {Log.warn("ConfigWriter getLoaderSection: file empty"); return null;}
+		ConfigLoader loader = null;
+		try {
+			loader = new ConfigLoader(file);
+		} catch(Exception e) {Log.error(e);}
+		if (loader == null) return null;
+		//если в конфиге с нулевой строки идет секция и одна одна в конфиге
+		//значит можно выдавать ConfigLoader с соответствующим параметром
+		if (loader.Methods.checkSection(0) && loader.getSectionNames().length == 1) {
+			loader.setThisIsSection();
+		}
+		return loader;
 	}
 	
 	/**

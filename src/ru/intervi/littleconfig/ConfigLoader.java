@@ -51,8 +51,22 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	 */
 	public EasyLogger Log = new EasyLogger();
 	
-	private boolean get = false;
-	private String[] file;
+	private boolean get = false; //загружен ли конфиг
+	private String[] file; //массив с содержимым файла конфигурации
+	private boolean tsc = false; //является ли этот экземпляр класса секцией
+	private boolean tf = false; //использовалась ли фековая загрузка
+	
+	/**
+	 * содержит ли данный экземпляр ConfigLoader секцию, полученную спец. методом (например {@link ru.intervi.littleconfig.ConfigLoader#getSection(String)})
+	 * @return true если да; false если нет
+	 */
+	public final boolean thisIsSection() {
+		return tsc;
+	}
+	
+	protected void setThisIsSection() { //метод для правки переменной из ConfigWriter-а
+		tsc = true;
+	}
 	
 	/**
 	 * проверить, загружен ли конфиг
@@ -60,6 +74,14 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	 */
 	public final boolean isLoad() { //загружен ли конфиг
 		return get;
+	}
+	
+	/**
+	 * использовалась ли фековая загрузка конфига
+	 * @return true если да; false если нет
+	 */
+	public final boolean isFakeLoad() {
+		return tf;
 	}
 	
 	/**
@@ -119,6 +141,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 			if (value[i] != null) file[i] = value[i]; else file[i] = "";
 		}
 		get = true;
+		tf = true;
 	}
 	
 	/**
@@ -962,6 +985,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	private TypeValue getTypeData(String str) { //узнать тип данных в строке
 		TypeValue result = TypeValue.NULL;
 		if (str == null) {Log.warn("ConfigLoader getTypeData: null str"); return result;}
+		if (!get | file == null) {Log.warn("ConfigLoader getTypeData: failed, config not loaded or file == null"); return result;}
 		if (str.isEmpty()) return result;
 		try {
 			double t = Double.parseDouble(str); //вычисление по диапазонам значений
@@ -1288,6 +1312,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	
 	private ConfigLoader getSection(int index) { //получить лоадер с нужной секцией
 		if (index < 0) {Log.warn("ConfigLoader getSection: index < 0"); return null;}
+		if (!get | file == null) {Log.warn("ConfigLoader getSection(int index): failed, config not loaded or file == null"); return null;}
 		int l = getSectionRealLength(index);
 		ConfigLoader loader = new ConfigLoader();
 		if (l > 0) {
@@ -1295,6 +1320,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 			for (int i = index; i < (index+l) & i < file.length; i++) sec[(i-index)] = file[i];
 			try {
 				loader.fakeLoad(sec);
+				loader.tsc = true;
 			} catch(Exception e) {Log.error(e);}
 		}
 		return loader;
@@ -1310,7 +1336,55 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		int index = getIndexSection(name);
 		ConfigLoader loader = null;
 		if (index >= 0) loader = getSection(index);
+		else Log.warn("ConfigLoader getSection: " + name + " failed, index < 0");
 		return loader;
+	}
+	
+	/**
+	 * получить ConfigLoader с секцией из секции
+	 * @param section название секции
+	 * @param name имя нужной вложенной секции
+	 * @return ConfigLoader с загруженной секцикй либо null в случае ошибки, либо пустой класс (необходимо проверять через {@link ru.intervi.littleconfig.ConfigLoader#isLoad()})
+	 */
+	public ConfigLoader getSectionInSection(String section, String name) {
+		if (name == null | section == null) {Log.warn("ConfigLoader getSectionInSection: null name or null section"); return null;}
+		int index = getIndexSection(name);
+		ConfigLoader loader = null;
+		if (index >= 0) {
+			int leng = getSectionRealLength(index);
+			for (int i = (index+1); i < (index+leng) & i < file.length; i++) {
+				if (isSection(i) && name.equals(clearStr(file[i]).name)) {
+					loader = getSection(i);
+					break;
+				}
+			}
+		} else Log.warn("ConfigLoader getSectionInSection: " + name + " in " + section + " failed, index < 0");
+		return loader;
+	}
+	
+	/**
+	 * заменить секцию
+	 * @param section имя секции на замену
+	 * @param newsection новая секция в виде ConfigLoader, полученный спец. методом (например {@link ru.intervi.littleconfig.ConfigLoader#getSection(String)})
+	 * @return true если замена удалась; false если нет
+	 */
+	public boolean replaceSection(String section, ConfigLoader newsection) {
+		boolean result = false;
+		if (section == null | newsection == null) {Log.warn("ConfigLoader replaceSection: null name of section or null newsection"); return result;}
+		if (!newsection.thisIsSection()) {Log.warn("ConfigLoader replaceSection: newsection is not a section"); return result;}
+		if (!get | file == null) {Log.warn("ConfigLoader replaceSection: failed, config not loaded or file == null"); return result;}
+		int index = getIndexSection(section);
+		if (index >= 0) {
+			int leng = getSectionRealLength(index);
+			ArrayList<String> newfile = new ArrayList<String>();
+			for (int i = 0; i < index; i++) newfile.add(file[i]);
+			String paste[] = newsection.getAll();
+			for (int i = 0; i < paste.length; i++) newfile.add(paste[i]);
+			for (int i = (index+leng); i < file.length; i++) newfile.add(file[i]);
+			file = newfile.toArray(new String[newfile.size()]);
+			result = true;
+		} else Log.warn("ConfigLoader replaceSection: failed, index < 0");
+		return result;
 	}
 	
 	/**
