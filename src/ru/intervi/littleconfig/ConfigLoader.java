@@ -246,14 +246,14 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		ClearResult result = new ClearResult();
 		if (s == null) return result;
 		result.origin = s;
+		if (Utils.trim(s).length() <= 1) { //нормальная строка не может быть в 1 символ
+			result.empty = true;
+			return result;
+		}
 		if (s.trim().charAt(0) == '#') { //если коммент во всю строку
 			result.comindex = 0;
 			result.com = s.substring(1, s.length());
 			result.fullstr = true;
-			return result;
-		}
-		if (Utils.trim(s).length() <= 1) { //нормальная строка не может быть в 1 символ
-			result.empty = true;
 			return result;
 		}
 		
@@ -267,6 +267,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 				hyp = -1; //тире
 		boolean qn = false; //заключено ли название в кавычки
 		boolean br = false; //прервать ли цикл
+		
 		for (int i = 0; i < c.length; i++) {
 			if (br) break; //прерывание обработки в случае нахождения ошибки
 			if (c[i] == ' ') { //пропуск обработки пробелов
