@@ -546,7 +546,9 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		String result = null;
 		if (name == null) {Log.warn("ConfigLoader getString: null name"); return result;}
 		if (get & file != null) {
-			result = getString(getIndexNoSection(name));
+			int index = getIndexNoSection(name);
+			if (index == -1) Log.warn("ConfigLoader getString(name): " + name + " error, not found");
+			else result = getString(index);
 		} else Log.warn("ConfigLoader getString(name): " + name + " error (file not load or null array");
 		return result;
 	}
@@ -763,7 +765,9 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		String[] result = null;
 		if (name == null) {Log.warn("ConfigLoader getStringArray(name): null name"); return result;}
 		if (get & file != null) {
-			result = getStringArray(getIndexNoSection(name));
+			int index = getIndexNoSection(name);
+			if (index == -1) Log.warn("ConfigLoader getStringArray(name): " + name + " error, not found");
+			else result = getStringArray(index);
 		} else Log.warn("ConfigLoader getStringArray(name): get " + name + " failed (config not loaded or file = null)");
 		return result;
 	}
@@ -1467,7 +1471,9 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		String result = null;
 		if (name == null | section == null) {Log.warn("ConfigLoader getStringInSection: null name or null section"); return result;}
 		if (get & file != null) {
-			result = getString(getIndexInSection(section, name));
+			int index = getIndexInSection(section, name);
+			if (index == -1) Log.warn("ConfigLoader getStringInSection: " + name + " in " + section + " error, not found");
+			else result = getString(index);
 		} else Log.warn("ConfigLoader getStringInSection: failed get " + name + " in " + section + ", config not loaded or file == null");
 		return result;
 	}
@@ -1572,7 +1578,9 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		String[] result = null;
 		if (name == null | section == null) {Log.warn("ConfigLoader getStringArrayInSection: null name or null section"); return result;}
 		if (get & file != null) {
-			result = getStringArray(getIndexInSection(section, name));
+			int index = getIndexInSection(section, name);
+			if (index == -1) Log.warn("ConfigLoader getStringArrayInSection: " + name + " in " + section + " error, not found");
+			else result = getStringArray(index);
 		} else Log.warn("ConfigLoader getStringArrayInSection: failed get " + name + " in " + section + ", config not loaded or file == null");
 		return result;
 	}
