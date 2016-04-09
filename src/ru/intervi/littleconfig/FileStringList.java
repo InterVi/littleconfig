@@ -32,7 +32,7 @@ public class FileStringList { //класс-основа для создания 
 	/**
 	 * используемый логгер для вывода сообщений
 	 */
-	public EasyLogger Log = new EasyLogger();
+	public EasyLogger log = new EasyLogger();
 	private boolean load = false;
 	
 	/**
@@ -46,7 +46,7 @@ public class FileStringList { //класс-основа для создания 
 	 * @throws IOException ошибка при чтении
 	 */
 	public void read(String path) throws IOException { //чтение файла
-		if (path == null) {Log.warn("FileStringList: error read, null path"); return;}
+		if (path == null) {log.warn("FileStringList: error read, null path"); return;}
 		read(new File(path));
 	}
 	
@@ -56,7 +56,7 @@ public class FileStringList { //класс-основа для создания 
 	 * @throws IOException ошибка при чтении
 	 */
 	public void read(File file) throws IOException { //чтение файла
-		if (file == null) {Log.warn("FileStringList: error read, null file"); return;}
+		if (file == null) {log.warn("FileStringList: error read, null file"); return;}
 		if (file.isFile()) {
 			if (!list.isEmpty()) list.clear();
 			BufferedReader reader = new BufferedReader(new FileReader(file));
@@ -67,7 +67,7 @@ public class FileStringList { //класс-основа для создания 
 			reader.close();
 			load = true;
 		} else {
-			Log.warn("FileStringList: file " + file + " not found");
+			log.warn("FileStringList: file " + file + " not found");
 			load = false;
 		}
 	}
@@ -78,7 +78,7 @@ public class FileStringList { //класс-основа для создания 
 	 * @throws IOException ошибка при записи
 	 */
 	public void write(String path) throws IOException { //запись файла
-		if (path == null) {Log.warn("FileStringList: error write, null path"); return;}
+		if (path == null) {log.warn("FileStringList: error write, null path"); return;}
 		write(new File(path));
 	}
 	
@@ -88,7 +88,7 @@ public class FileStringList { //класс-основа для создания 
 	 * @throws IOException ошибка при записи
 	 */
 	public void write(File file) throws IOException { //запись файла
-		if (file == null) {Log.warn("FileStringList: error write, null write"); return;}
+		if (file == null) {log.warn("FileStringList: error write, null write"); return;}
 		if (!list.isEmpty()) {
 			BufferedWriter writer = new BufferedWriter(new FileWriter(file));
 			Iterator<String> iter = list.iterator();
@@ -100,7 +100,7 @@ public class FileStringList { //класс-основа для создания 
 				}
 			}
 			writer.close();
-		} else Log.warn("FileStringList: empty list " + file);
+		} else log.warn("FileStringList: empty list " + file);
 	}
 		
 	/**
@@ -111,7 +111,7 @@ public class FileStringList { //класс-основа для создания 
 		String result[] = null;
 		if (!list.isEmpty()) {
 			result = list.toArray(new String[list.size()]);
-		} else Log.warn("FileStringList: empty list");
+		} else log.warn("FileStringList: empty list");
 		return result;
 	}
 	

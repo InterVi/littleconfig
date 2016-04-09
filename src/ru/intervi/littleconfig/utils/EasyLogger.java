@@ -68,8 +68,8 @@ public class EasyLogger { //класс для вывода сообщений в
 		this.warn = warn;
 		this.error = error;
 		d = new SimpleDateFormat(date);
-		ToFile.setFile(log);
-		ToFile.onLog();
+		toFile.setFile(log);
+		toFile.onLog();
 	}
 	/**
 	 * установить префиксы и файл лога (вывод в файл будет включен)
@@ -84,8 +84,8 @@ public class EasyLogger { //класс для вывода сообщений в
 		this.info = info;
 		this.warn = warn;
 		this.error = error;
-		ToFile.setFile(log);
-		ToFile.onLog();
+		toFile.setFile(log);
+		toFile.onLog();
 	}
 	/**
 	 * установить префикс с названием и файл лога (вывод в файл будет включен)
@@ -94,8 +94,8 @@ public class EasyLogger { //класс для вывода сообщений в
 	 */
 	public EasyLogger(String prefix, File log) {
 		this.prefix = prefix;
-		ToFile.setFile(log);
-		ToFile.onLog();
+		toFile.setFile(log);
+		toFile.onLog();
 	}
 	
 	/**
@@ -103,8 +103,8 @@ public class EasyLogger { //класс для вывода сообщений в
 	 * @param log файл лога
 	 */
 	public EasyLogger(File log) {
-		ToFile.setFile(log);
-		ToFile.onLog();
+		toFile.setFile(log);
+		toFile.onLog();
 	}
 	
 	private boolean send = true; //общий вывод в консоль
@@ -126,8 +126,8 @@ public class EasyLogger { //класс для вывода сообщений в
 		if (text == null) return;
 		String mess = info + ' ' + prefix + " [" + d.format(new Date()) + "] " + text;
 		if (send & sinfo) System.out.println(mess);
-		ToFile.log(mess, TypeMess.INFO);
-		MemoryLog.put(mess, TypeMess.INFO);
+		toFile.log(mess, TypeMess.INFO);
+		memlog.put(mess, TypeMess.INFO);
 		sendToList(mess, TypeMess.INFO);
 	}
 	
@@ -148,8 +148,8 @@ public class EasyLogger { //класс для вывода сообщений в
 		if (text == null) return;
 		String mess = warn + ' ' + prefix + " [" + d.format(new Date()) + "] " + text;
 		if (send & swarn) System.out.println(mess);
-		ToFile.log(mess, TypeMess.WARN);
-		MemoryLog.put(mess, TypeMess.WARN);
+		toFile.log(mess, TypeMess.WARN);
+		memlog.put(mess, TypeMess.WARN);
 		sendToList(mess, TypeMess.WARN);
 	}
 	
@@ -170,8 +170,8 @@ public class EasyLogger { //класс для вывода сообщений в
 		if (text == null) return;
 		String mess = error + ' ' + prefix + " [" + d.format(new Date()) + "] " + text;
 		if (send & serror) System.out.println(mess);
-		ToFile.log(mess, TypeMess.ERROR);
-		MemoryLog.put(mess, TypeMess.ERROR);
+		toFile.log(mess, TypeMess.ERROR);
+		memlog.put(mess, TypeMess.ERROR);
 		sendToList(mess, TypeMess.ERROR);
 	}
 	
@@ -200,7 +200,7 @@ public class EasyLogger { //класс для вывода сообщений в
 		while(iter.hasNext()) {
 			String str = iter.next();
 			error(str);
-			MemoryLog.put(str, TypeMess.ERROR);
+			memlog.put(str, TypeMess.ERROR);
 		}
 	}
 	
@@ -457,7 +457,7 @@ public class EasyLogger { //класс для вывода сообщений в
 	/**
 	 * инициализированный объект ToFile
 	 */
-	public ToFile ToFile = new ToFile();
+	public ToFile toFile = new ToFile();
 	
 	/**
 	 * тип отправляемого в лог сообщения
@@ -717,5 +717,5 @@ public class EasyLogger { //класс для вывода сообщений в
 	/**
 	 * инициализированный объект MemoryLog
 	 */
-	public MemoryLog MemoryLog = new MemoryLog();
+	public MemoryLog memlog = new MemoryLog();
 }

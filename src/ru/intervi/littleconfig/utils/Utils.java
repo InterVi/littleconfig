@@ -13,7 +13,7 @@ public class Utils { //разные полезные методы
 	/**
 	 * используемый логгер для вывода сообщений
 	 */
-	public static EasyLogger Log = new EasyLogger();
+	public static EasyLogger log = new EasyLogger();
 	
 	/**
 	 * удаляет часть из строки
@@ -92,7 +92,7 @@ public class Utils { //разные полезные методы
 		try {
 			return Byte.parseByte(s);
 		} catch(Exception e) {
-			Log.error(e);
+			log.error(e);
 			return 0;
 		}
 	}
@@ -107,7 +107,7 @@ public class Utils { //разные полезные методы
 		try {
 			return Short.parseShort(s);
 		} catch(Exception e) {
-			Log.error(e);
+			log.error(e);
 			return 0;
 		}
 	}
@@ -122,7 +122,7 @@ public class Utils { //разные полезные методы
 		try {
 			return Integer.parseInt(s);
 		} catch(Exception e) {
-			Log.error(e);
+			log.error(e);
 			return 0;
 		}
 	}
@@ -137,7 +137,7 @@ public class Utils { //разные полезные методы
 		try {
 			return Long.parseLong(s);
 		} catch(Exception e) {
-			Log.error(e);
+			log.error(e);
 			return 0;
 		}
 	}
@@ -152,7 +152,7 @@ public class Utils { //разные полезные методы
 		try {
 			return Double.parseDouble(s);
 		} catch(Exception e) {
-			Log.error(e);
+			log.error(e);
 			return 0;
 		}
 	}
@@ -167,7 +167,7 @@ public class Utils { //разные полезные методы
 		try {
 			return Boolean.parseBoolean(s);
 		} catch(Exception e) {
-			Log.error(e);
+			log.error(e);
 			return false;
 		}
 	}
@@ -185,7 +185,7 @@ public class Utils { //разные полезные методы
 			for (int i = 0; i < s.length; i++) {
 				if (s[i] != null) result[i] = Byte.parseByte(s[i]);
 			}
-		} catch(Exception e) {Log.error(e);}
+		} catch(Exception e) {log.error(e);}
 		return result;
 	}
 	
@@ -202,7 +202,7 @@ public class Utils { //разные полезные методы
 			for (int i = 0; i < s.length; i++) {
 				if (s[i] != null) result[i] = Short.parseShort(s[i]);
 			}
-		} catch(Exception e) {Log.error(e);}
+		} catch(Exception e) {log.error(e);}
 		return result;
 	}
 	
@@ -219,7 +219,7 @@ public class Utils { //разные полезные методы
 			for (int i = 0; i < s.length; i++) {
 				if (s[i] != null) result[i] = Integer.parseInt(s[i]);
 			}
-		} catch(Exception e) {Log.error(e);}
+		} catch(Exception e) {log.error(e);}
 		return result;
 	}
 	
@@ -236,7 +236,7 @@ public class Utils { //разные полезные методы
 			for (int i = 0; i < s.length; i++) {
 				if (s[i] != null) result[i] = Long.parseLong(s[i]);
 			}
-		} catch(Exception e) {Log.error(e);}
+		} catch(Exception e) {log.error(e);}
 		return result;
 	}
 	
@@ -253,7 +253,7 @@ public class Utils { //разные полезные методы
 			for (int i = 0; i < s.length; i++) {
 				if (s[i] != null) result[i] = Double.parseDouble(s[i]);
 			}
-		} catch(Exception e) {Log.error(e);}
+		} catch(Exception e) {log.error(e);}
 		return result;
 	}
 	
@@ -270,7 +270,7 @@ public class Utils { //разные полезные методы
 			for (int i = 0; i < s.length; i++) {
 				if (s[i] != null) result[i] = Boolean.parseBoolean(s[i]);
 			}
-		} catch(Exception e) {Log.error(e);}
+		} catch(Exception e) {log.error(e);}
 		return result;
 	}
 	
@@ -295,7 +295,7 @@ public class Utils { //разные полезные методы
 			String path = new File(c.getProtectionDomain().getCodeSource().getLocation().getPath()).getAbsolutePath();
 			return path.substring(0, path.lastIndexOf(File.separator));
 		} catch(Exception e) {
-			Log.error(e);
+			log.error(e);
 			return null;
 		}
 	}
@@ -319,7 +319,7 @@ public class Utils { //разные полезные методы
 			fos.close();
 			return true;
 		} catch(Exception e) {
-			Log.error(e);
+			log.error(e);
 			return false;
 		}
 	}

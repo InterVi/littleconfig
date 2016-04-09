@@ -43,7 +43,7 @@ public class ConfigWriter { //запись и изменение конфига
 	/**
 	 * используемый логгер для вывода сообщений
 	 */
-	public EasyLogger Log = new EasyLogger();
+	public EasyLogger log = new EasyLogger();
 	
 	private String file[] = null; //конфиг
 	private boolean set = false, neew = true; //установлен ли конфиг и новый ли он
@@ -59,7 +59,7 @@ public class ConfigWriter { //запись и изменение конфига
 	 */
 	public boolean setConfig(String path, boolean gap) throws IOException { //установка конфига
 		if (path == null) {
-			Log.warn("ConfigWriter setConfig(String path): null path");
+			log.warn("ConfigWriter setConfig(String path): null path");
 			return false;
 		}
 		return setConfig(new File(path), gap);
@@ -74,17 +74,17 @@ public class ConfigWriter { //запись и изменение конфига
 	 */
 	public boolean setConfig(File path, boolean gap) throws IOException { //установка конфига
 		if (path == null) {
-			Log.warn("ConfigWriter setConfig(File path): null path");
+			log.warn("ConfigWriter setConfig(File path): null path");
 			return false;
 		}
 		if (path.isFile() && !path.canWrite()) {
-			Log.warn("ConfigWriter setConfig: cannot writable");
+			log.warn("ConfigWriter setConfig: cannot writable");
 			return false;
 		}
 		boolean result = false;
 		result = path.isFile();
 		if (!result) { //создаем конфиг, если его нет
-			if (!path.createNewFile()) Log.warn("ConfigWriter: cannot create " + path.getAbsolutePath()); else {
+			if (!path.createNewFile()) log.warn("ConfigWriter: cannot create " + path.getAbsolutePath()); else {
 				set = true;
 				patch = path.getAbsolutePath();
 				neew = true;
@@ -114,7 +114,7 @@ public class ConfigWriter { //запись и изменение конфига
 			}
 			write.close();
 			neew = false;
-		} else Log.warn("ConfigWriter: cannot write file, config file not set");
+		} else log.warn("ConfigWriter: cannot write file, config file not set");
 	}
 	
 	/**
@@ -142,7 +142,7 @@ public class ConfigWriter { //запись и изменение конфига
 	
 	private void setOption(String name, String value, int ind) { //запись значения переменной
 		if (name == null || value == null) {
-			Log.warn("ConfigWriter setOption: null name or null value");
+			log.warn("ConfigWriter setOption: null name or null value");
 			return;
 		}
 		if (set) {
@@ -155,12 +155,12 @@ public class ConfigWriter { //запись и изменение конфига
 					ConfigLoader loader = new ConfigLoader();
 					loader.fakeLoad(file);
 					int index = -1;
-					if (ind == -1) index = loader.Methods.recIndexNoSection(name); else index = ind;
+					if (ind == -1) index = loader.methods.recIndexNoSection(name); else index = ind;
 					if (index > -1) { //перезаписываем переменную, если она есть
-						ClearResult r = loader.Methods.clearString(file[index]);
+						ClearResult r = loader.methods.clearString(file[index]);
 						if (r.broken) return; //страховка
 						String p = "";
-						int prob = loader.Methods.recProbels(file[index]);
+						int prob = loader.methods.recProbels(file[index]);
 						for (int i = 0; i <= prob; i++) p += ' ';
 						String rep = p + r.name + ": " + value; //подменяем значение
 						if (r.com != null) rep += " #" + r.com; //возвращаем комментарий, если он был
@@ -171,9 +171,9 @@ public class ConfigWriter { //запись и изменение конфига
 						rep[(rep.length-1)] = name + ": " + value;
 						file = rep;
 					}
-				} else Log.warn("ConfigWriter: cannot write var " + name + ", var not found");
-			} else Log.warn("ConfigWriter: error write var " + name + ", config file not set");
-		} else Log.warn("ConfigWriter: error write var " + name + ", config file not set");
+				} else log.warn("ConfigWriter: cannot write var " + name + ", var not found");
+			} else log.warn("ConfigWriter: error write var " + name + ", config file not set");
+		} else log.warn("ConfigWriter: error write var " + name + ", config file not set");
 	}
 	
 	/**
@@ -187,7 +187,7 @@ public class ConfigWriter { //запись и изменение конфига
 	
 	private void setArray(String name, String[] value, boolean skobka, int ind) { //запись значения массива
 		if (name == null || value == null) {
-			Log.warn("ConfigWriter setArray: null name or null value");
+			log.warn("ConfigWriter setArray: null name or null value");
 			return;
 		}
 		if (set) {
@@ -214,16 +214,16 @@ public class ConfigWriter { //запись и изменение конфига
 				ConfigLoader loader = new ConfigLoader();
 				loader.fakeLoad(file);
 				int index = -1;
-				if (ind == -1) index = loader.Methods.recIndexNoSection(name); else index = ind;
+				if (ind == -1) index = loader.methods.recIndexNoSection(name); else index = ind;
 				if (index > -1) { //если нужно заменить значение у старого массива
 					ArrayList<String> one = new ArrayList<String>(); //содержимое до массива
 					ArrayList<String> two = new ArrayList<String>(); //после
 					ArrayList<String> paste = new ArrayList<String>(); //что вставить вместо него
 					//заполнение частей до и после массива
 					for (int i = 0; i < index; i++) one.add(file[i]);
-					for (int i = (index + loader.Methods.getArrayRealLength(index)); i < file.length; i++) two.add(file[i]);
+					for (int i = (index + loader.methods.getArrayRealLength(index)); i < file.length; i++) two.add(file[i]);
 					
-					int p = loader.Methods.recProbels(file[index]);
+					int p = loader.methods.recProbels(file[index]);
 					String pr = "";
 					for (int i = 0; i <= p; i++) pr += ' ';
 					if (skobka) { //если новый массив в скобках
@@ -280,8 +280,8 @@ public class ConfigWriter { //запись и изменение конфига
 					}
 					file = newfile.toArray(new String[newfile.size()]);
 				}
-			} else Log.warn("ConfigWriter: error write array " + name + ", config file not set");
-		} else Log.warn("ConfigWriter: error write array " + name + ", config file not set");
+			} else log.warn("ConfigWriter: error write array " + name + ", config file not set");
+		} else log.warn("ConfigWriter: error write array " + name + ", config file not set");
 	}
 	
 	/**
@@ -301,31 +301,31 @@ public class ConfigWriter { //запись и изменение конфига
 	 * @param section имя секции
 	 */
 	public void setOptionInSection(String name, String value, String section) { //запись опции в секцию
-		if (name == null) {Log.warn("ConfigWriter setOptionInSection: null name"); return;}
-		if (value == null) {Log.warn("ConfigWriter setOptionInSection: null value"); return;}
-		if (section == null) {Log.warn("ConfigWriter setOptionInSection: null section"); return;}
+		if (name == null) {log.warn("ConfigWriter setOptionInSection: null name"); return;}
+		if (value == null) {log.warn("ConfigWriter setOptionInSection: null value"); return;}
+		if (section == null) {log.warn("ConfigWriter setOptionInSection: null section"); return;}
 		if (set) {
 			if (!neew) { //если правится старый конфиг
-				if (file == null) {Log.warn("ConfigWriter : error write var " + name + " in section " + section + ", null file");}
+				if (file == null) {log.warn("ConfigWriter : error write var " + name + " in section " + section + ", null file");}
 				ConfigLoader loader = new ConfigLoader();
 				loader.fakeLoad(file);
-				int index = loader.Methods.recIndexInSection(section, name);
+				int index = loader.methods.recIndexInSection(section, name);
 				if (index != -1) setOption(name, value, index); else { //если опции нет в конфиге (ее не надо заменять)
 					ArrayList<String> newfile = new ArrayList<String>(); //запись секции, если ее нет в конфиге
 					for (int i = 0; i < file.length; i++) newfile.add(file[i]);
-					int sec = loader.Methods.recIndexSection(section);
+					int sec = loader.methods.recIndexSection(section);
 					if (sec == -1) { //если создается новая секция
 						newfile.add(section + ":");
 						newfile.add("  " + name + ": " + value);
 					} else if ((sec + loader.getSectionRealLength(section)) == file.length) { //если нужно добавить в старую, и она в конце конфига
-						int p = loader.Methods.recProbels(file[sec]);
+						int p = loader.methods.recProbels(file[sec]);
 						String prob = "  ";
 						for (int i = 0; i <= p; i++) prob += ' ';
 						newfile.add(prob + name + ": " + value);
 					} else { //если позиция плавающая
 						newfile.clear();
 						for (int i = 0; i <= (sec + loader.getSectionRealLength(section) - 1) & i < file.length; i++) newfile.add(file[i]);
-						int p = loader.Methods.recProbels(file[sec]);
+						int p = loader.methods.recProbels(file[sec]);
 						String prob = "  ";
 						for (int i = 0; i <= p; i++) prob += ' ';
 						newfile.add(prob + name + ": " + value);
@@ -339,7 +339,7 @@ public class ConfigWriter { //запись и изменение конфига
 				file[1] = "  " + name + ": " + value;
 				neew = false;
 			}
-		} else Log.warn("ConfigWriter: error write var " + name + " in section " + section + ", config file not set");
+		} else log.warn("ConfigWriter: error write var " + name + " in section " + section + ", config file not set");
 	}
 	
 	/**
@@ -350,19 +350,19 @@ public class ConfigWriter { //запись и изменение конфига
 	 * @param section имя секции
 	 */
 	public void setArrayInSection(String name, String value[], boolean skobka, String section) { //запись массива в секцию
-		if (name == null) {Log.warn("ConfigWriter setArrayInSection: null name"); return;}
-		if (value == null) {Log.warn("ConfigWriter setArrayInSection: null value"); return;}
-		if (section == null) {Log.warn("ConfigWriter setArrayInSection: null section"); return;}
+		if (name == null) {log.warn("ConfigWriter setArrayInSection: null name"); return;}
+		if (value == null) {log.warn("ConfigWriter setArrayInSection: null value"); return;}
+		if (section == null) {log.warn("ConfigWriter setArrayInSection: null section"); return;}
 		if (set) {
 			if (!neew) { //если редактируется старый конфиг
-				if (file == null) {Log.warn("ConfigWriter : error write array " + name + " in section " + section + ", null file");}
+				if (file == null) {log.warn("ConfigWriter : error write array " + name + " in section " + section + ", null file");}
 				ConfigLoader loader = new ConfigLoader();
 				loader.fakeLoad(file);
-				int index = loader.Methods.recIndexInSection(section, name);
+				int index = loader.methods.recIndexInSection(section, name);
 				if (index != -1) setArray(name, value, skobka, index); else {
 					ArrayList<String> newfile = new ArrayList<String>(); //запись массива, если его нет в конфиге
 					for (int i = 0; i < file.length; i++) newfile.add(file[i]);
-					int sec = loader.Methods.recIndexSection(section);
+					int sec = loader.methods.recIndexSection(section);
 					if (sec == -1) { //если создается новая секция
 						newfile.add(section + ":");
 						if (skobka) { //если нужно создать массив в скобках
@@ -381,7 +381,7 @@ public class ConfigWriter { //запись и изменение конфига
 							}
 						}
 					} else if ((sec + loader.getSectionRealLength(section)) == file.length) { //если нужно добавить в старую, и она в конце конфига
-						int p = loader.Methods.recProbels(file[sec]);
+						int p = loader.methods.recProbels(file[sec]);
 						String prob = "  ";
 						for (int i = 0; i <= p; i++) prob += ' ';
 						if (skobka) {
@@ -402,7 +402,7 @@ public class ConfigWriter { //запись и изменение конфига
 					} else { //если позиция плавающая
 						newfile.clear();
 						for (int i = 0; i <= (sec + loader.getSectionRealLength(section) - 1) & i < file.length; i++) newfile.add(file[i]);
-						int p = loader.Methods.recProbels(file[sec]);
+						int p = loader.methods.recProbels(file[sec]);
 						String prob = "  ";
 						for (int i = 0; i <= p; i++) prob += ' ';
 						if (skobka) {
@@ -447,25 +447,25 @@ public class ConfigWriter { //запись и изменение конфига
 					neew = false;
 				}
 			}
-		} else Log.warn("ConfigWriter: error write array " + name + " in section " + section + ", config file not set");
+		} else log.warn("ConfigWriter: error write array " + name + " in section " + section + ", config file not set");
 	}
 	
 	private void delOption(String name, int ind) { //удаление опции из конфига
-		if (name == null) {Log.warn("ConfigWriter delOption: error, null name"); return;}
+		if (name == null) {log.warn("ConfigWriter delOption: error, null name"); return;}
 		if (set) {
 			if (!neew) {
-				if (file == null) {Log.warn("ConfigWriter delOption: error, null file"); return;}
+				if (file == null) {log.warn("ConfigWriter delOption: error, null file"); return;}
 				ConfigLoader loader = new ConfigLoader();
 				loader.fakeLoad(file);
-				int index = ind; if (index == -1) index = loader.Methods.recIndexNoSection(name);
+				int index = ind; if (index == -1) index = loader.methods.recIndexNoSection(name);
 				if (index > -1) {
 					ArrayList<String> newfile = new ArrayList<String>();
 					for (int i = 0; i < index; i++) newfile.add(file[i]);
 					for (int i = (index+1); i < file.length; i++) newfile.add(file[i]);
 					file = newfile.toArray(new String[newfile.size()]);
-				} else Log.warn("ConfigWriter: error delete var " + name + ", var not found");
-			} else Log.warn("ConfigWriter: error delete var " + name + ", config file not found");
-		} else Log.warn("ConfigWriter: error delete var " + name + ", config file not set");
+				} else log.warn("ConfigWriter: error delete var " + name + ", var not found");
+			} else log.warn("ConfigWriter: error delete var " + name + ", config file not found");
+		} else log.warn("ConfigWriter: error delete var " + name + ", config file not set");
 	}
 	
 	/**
@@ -477,27 +477,27 @@ public class ConfigWriter { //запись и изменение конфига
 	}
 	
 	private void delArray(String name, int ind) { //удаление массива
-		if (name == null) {Log.warn("ConfigWriter delArray: error, null name"); return;}
+		if (name == null) {log.warn("ConfigWriter delArray: error, null name"); return;}
 		if (set) {
 			if (!neew) {
-				if (file == null) {Log.warn("ConfigWriter delArray: error, null file"); return;}
+				if (file == null) {log.warn("ConfigWriter delArray: error, null file"); return;}
 				ConfigLoader loader = new ConfigLoader();
 				loader.fakeLoad(file);
-				int index = ind; if (index == -1) index = loader.Methods.recIndexNoSection(name);
+				int index = ind; if (index == -1) index = loader.methods.recIndexNoSection(name);
 				if (index > -1) {
-					boolean skobka = loader.Methods.checkArray(index).skobka;
+					boolean skobka = loader.methods.checkArray(index).skobka;
 					if (skobka) {
 						delOption(name, index);
 					} else {
-						int leng = loader.Methods.recStringArray(index).length;
+						int leng = loader.methods.recStringArray(index).length;
 						ArrayList<String> newfile = new ArrayList<String>();
 						for (int i = 0; i < index; i++) newfile.add(file[i]);
 						for (int i = (index+leng+1); i < file.length; i++) newfile.add(file[i]);
 						file = newfile.toArray(new String[newfile.size()]);
 					}
-				} else Log.warn("ConfigWriter: error delete array " + name + ", array not found");
-			} else Log.warn("ConfigWriter: error delete array " + name + ", config file not found");
-		} else Log.warn("ConfigWriter: error delete array " + name + ", config file not set");
+				} else log.warn("ConfigWriter: error delete array " + name + ", array not found");
+			} else log.warn("ConfigWriter: error delete array " + name + ", config file not found");
+		} else log.warn("ConfigWriter: error delete array " + name + ", config file not set");
 	}
 	
 	/**
@@ -514,19 +514,19 @@ public class ConfigWriter { //запись и изменение конфига
 	 * @param section имя секции
 	 */
 	public void delOptionInSection(String name, String section) { //удаление параметра из секции
-		if (name == null) {Log.warn("ConfigWriter delOptionInSection: error, null name"); return;}
-		if (section == null) {Log.warn("ConfigWriter delOptionInSection: error, null section"); return;}
+		if (name == null) {log.warn("ConfigWriter delOptionInSection: error, null name"); return;}
+		if (section == null) {log.warn("ConfigWriter delOptionInSection: error, null section"); return;}
 		if (set) {
 			if (!neew) {
-				if (file == null) {Log.warn("ConfigWriter delOptionInSection: error, null file"); return;}
+				if (file == null) {log.warn("ConfigWriter delOptionInSection: error, null file"); return;}
 				ConfigLoader loader = new ConfigLoader();
 				loader.fakeLoad(file);
-				int index = loader.Methods.recIndexInSection(section, name);
+				int index = loader.methods.recIndexInSection(section, name);
 				if (index > -1) {
 					delOption(name, index);
-				} else Log.warn("ConfigWriter: error delete var " + name + " from section " + section + ", var not found");
-			} else Log.warn("ConfigWriter: error delete var " + name + " from section " + section + ", config file not found");
-		} else Log.warn("ConfigWriter: error delete var " + name + " from section " + section + ", config file not set");
+				} else log.warn("ConfigWriter: error delete var " + name + " from section " + section + ", var not found");
+			} else log.warn("ConfigWriter: error delete var " + name + " from section " + section + ", config file not found");
+		} else log.warn("ConfigWriter: error delete var " + name + " from section " + section + ", config file not set");
 	}
 	
 	/**
@@ -535,19 +535,19 @@ public class ConfigWriter { //запись и изменение конфига
 	 * @param section имя секции
 	 */
 	public void delArrayInSection(String name, String section) { //удаление массива из секции
-		if (name == null) {Log.warn("ConfigWriter delArrayInSection: error, null name"); return;}
-		if (section == null) {Log.warn("ConfigWriter delArrayInSection: error, null section"); return;}
+		if (name == null) {log.warn("ConfigWriter delArrayInSection: error, null name"); return;}
+		if (section == null) {log.warn("ConfigWriter delArrayInSection: error, null section"); return;}
 		if (set) {
 			if (!neew) {
-				if (file == null) {Log.warn("ConfigWriter delArrayInSection: error, null file"); return;}
+				if (file == null) {log.warn("ConfigWriter delArrayInSection: error, null file"); return;}
 				ConfigLoader loader = new ConfigLoader();
 				loader.fakeLoad(file);
-				int index = loader.Methods.recIndexInSection(section, name);
+				int index = loader.methods.recIndexInSection(section, name);
 				if (index > -1) {
 					delArray(name, index);
-				} else Log.warn("ConfigWriter: error delete array " + name + " from section " + section + ", array not found");
-			} else Log.warn("ConfigWriter: error delete array " + name + " from section " + section + ", config file not found");
-		} else Log.warn("ConfigWriter: error delete array " + name + " from section " + section + ", config file not set");
+				} else log.warn("ConfigWriter: error delete array " + name + " from section " + section + ", array not found");
+			} else log.warn("ConfigWriter: error delete array " + name + " from section " + section + ", config file not found");
+		} else log.warn("ConfigWriter: error delete array " + name + " from section " + section + ", config file not set");
 	}
 	
 	/**
@@ -555,22 +555,22 @@ public class ConfigWriter { //запись и изменение конфига
 	 * @param section имя секции
 	 */
 	public void delSection(String section) {
-		if (section == null) {Log.warn("ConfigWriter delSection: error, null section"); return;}
+		if (section == null) {log.warn("ConfigWriter delSection: error, null section"); return;}
 		if (set) {
 			if (!neew) {
-				if (file == null) {Log.warn("ConfigWriter delSection: error, null file"); return;}
+				if (file == null) {log.warn("ConfigWriter delSection: error, null file"); return;}
 				ConfigLoader loader = new ConfigLoader();
 				loader.fakeLoad(file);
-				int index = loader.Methods.recIndexSection(section);
+				int index = loader.methods.recIndexSection(section);
 				if (index > -1) {
 					int leng = loader.getSectionRealLength(section);
 					ArrayList<String> newfile = new ArrayList<String>();
 					for (int i = 0; i < index; i++) newfile.add(file[i]);
 					for (int i = (index+leng); i < file.length; i++) newfile.add(file[i]);
 					file = newfile.toArray(new String[newfile.size()]);
-				} else Log.warn("ConfigWriter: error delete section " + section + ", section not found");
-			} else Log.warn("ConfigWriter: error delete section " + section + ", config file not found");
-		} else Log.warn("ConfigWriter: error delete section " + section + ", config file not set");
+				} else log.warn("ConfigWriter: error delete section " + section + ", section not found");
+			} else log.warn("ConfigWriter: error delete section " + section + ", config file not found");
+		} else log.warn("ConfigWriter: error delete section " + section + ", config file not set");
 	}
 	
 	/**
@@ -582,9 +582,9 @@ public class ConfigWriter { //запись и изменение конфига
 		if (set && patch != null) {
 			if (!neew) {
 				File conf = new File(patch);
-				if (conf.isFile()) result = conf.delete(); else Log.warn("ConfigWriter: error delete config file, not found");
-			} else Log.warn("ConfigWriter: error delete config file, not found");
-		} else Log.warn("ConfigWriter: error delete config file, not set");
+				if (conf.isFile()) result = conf.delete(); else log.warn("ConfigWriter: error delete config file, not found");
+			} else log.warn("ConfigWriter: error delete config file, not found");
+		} else log.warn("ConfigWriter: error delete config file, not set");
 		return result;
 	}
 	
@@ -593,16 +593,16 @@ public class ConfigWriter { //запись и изменение конфига
 	 * @return ConfigLoader с загруженной секцикй либо null в случае ошибки, либо пустой класс (необходимо проверять через {@link ru.intervi.littleconfig.ConfigLoader#isLoad()})
 	 */
 	public ConfigLoader getLoaderSection() {
-		if (!set | file == null) {Log.warn("ConfigWriter getLoaderSection: config not set or file == null"); return null;}
-		if (file.length == 0) {Log.warn("ConfigWriter getLoaderSection: file empty"); return null;}
+		if (!set | file == null) {log.warn("ConfigWriter getLoaderSection: config not set or file == null"); return null;}
+		if (file.length == 0) {log.warn("ConfigWriter getLoaderSection: file empty"); return null;}
 		ConfigLoader loader = null;
 		try {
 			loader = new ConfigLoader(file);
-		} catch(Exception e) {Log.error(e);}
+		} catch(Exception e) {log.error(e);}
 		if (loader == null) return null;
 		//если в конфиге с нулевой строки идет секция и одна одна в конфиге
 		//значит можно выдавать ConfigLoader с соответствующим параметром
-		if (loader.Methods.checkSection(0) && loader.getSectionNames().length == 1) {
+		if (loader.methods.checkSection(0) && loader.getSectionNames().length == 1) {
 			loader.setThisIsSection();
 		}
 		return loader;
@@ -656,10 +656,10 @@ public class ConfigWriter { //запись и изменение конфига
 		 * получть весь класс
 		 * @return new WriterMethods()
 		 */
-		public WriterMethods getMethods() {return new WriterMethods();} //получить весь класс
+		public WriterMethods getmethods() {return new WriterMethods();} //получить весь класс
 	}
 	/**
 	 * инициализированный объект WriterMethods
 	 */
-	public WriterMethods Methods = new WriterMethods();
+	public WriterMethods methods = new WriterMethods();
 }
