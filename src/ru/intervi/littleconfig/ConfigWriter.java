@@ -656,7 +656,7 @@ public class ConfigWriter { //запись и изменение конфига
 		 * получть весь класс
 		 * @return new WriterMethods()
 		 */
-		public WriterMethods getmethods() {return new WriterMethods();} //получить весь класс
+		public WriterMethods getMethods() {return new WriterMethods();} //получить весь класс
 	}
 	/**
 	 * инициализированный объект WriterMethods

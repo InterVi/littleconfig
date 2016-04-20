@@ -520,8 +520,8 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	 * ---------------ЧТЕНИЕ ДАННЫХ ИЗ СТРОК
 	 * ======================================================================================
 	 */
-	private String getFullStr(int index, boolean array) { //получить все компоненты опции, если значение разбросано на строки
-		//array true в случае обработки многострочного массива
+	private String getFullStr(int index) { //получить все компоненты опции, если значение разбросано на строки
+		//index - всегда следующий после первой части опции с названием
 		if (index < 0) {
 			log.warn("ConfigLoader getFullStr: failed, index < 0");
 			return null;
@@ -535,14 +535,17 @@ public class ConfigLoader { //чтение конфига из файла и п�
 			return null;
 		}
 		String result = null;
+		int p = 0;
+		if ((index-1) >= 0) p = getProbels(file[(index-1)]);
 		for (int i = index; i < file.length; i++) {
 			ClearResult cr = clearStr(file[i]);
 			if (cr.empty) continue;
 			if (!cr.broken) break; //если строка - не часть значения другого параметра
-			if (array && cr.hypindex != -1) break; //то же с элементами массивов
+			if (cr.hypindex != -1) break; //то же с элементами массивов
 			if (cr.cleaned == null) continue;
-			if (isSet(index)) { //еще одна проверка, что строка - не опция
-				String part = cr.cleaned.trim();
+			if (getProbels(file[i]) < p) break; //если у строки пробелов в начале меньше - это не часть значения
+			if (!isSet(i)) { //еще одна проверка, что строка - не опция
+				String part = cr.origin.trim();
 				char c[] = part.toCharArray();
 				char qc = '\u0000'; //символ кавычки
 				boolean q = false; //заключена ли строка в кавычки
@@ -563,7 +566,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 					if (q) {
 						if (c[n] == qc) { //найдена вторая кавычка
 							boolean ok = true;
-							for (int k = n; k < c.length; k++) { //проверка, что она действительно закрывающая
+							for (int k = (n+1); k < c.length; k++) { //проверка, что она действительно закрывающая
 								if (c[k] != ' ' | c[k] != '#') { //на конце ничего не должно быть (кроме коммента)
 									ok = false;
 									break;
@@ -583,7 +586,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 				}
 				//обрезка и сохранение значения
 				if (result == null) result = part.substring(ind[0], ind[1]);
-				else result = part.substring(ind[0], ind[1]);
+				else result += part.substring(ind[0], ind[1]);
 			} else break;
 		}
 		return result;
@@ -600,12 +603,12 @@ public class ConfigLoader { //чтение конфига из файла и п�
 					if (r.content != null) {
 						result = r.content;
 						if ((index+1) < file.length) { //добавление остальных линий
-							String part = getFullStr((index+1), false);
+							String part = getFullStr((index+1));
 							if (part != null) result += part;
 						}
 					} else {
 						if ((index+1) < file.length) { //добавление остальных линий
-							String part = getFullStr((index+1), false);
+							String part = getFullStr((index+1));
 							if (part != null) result = part;
 						}
 					}
@@ -743,7 +746,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 			if (a.skobka) { //парсинг данных из однострочного массива
 				String cl = a.clear.content;
 				if ((index+1) < file.length) {
-					String part = getFullStr(index, false);
+					String part = getFullStr((index+1));
 					if (part != null) {
 						if (cl != null) cl += part;
 						else cl = part;
@@ -781,14 +784,22 @@ public class ConfigLoader { //чтение конфига из файла и п�
 										z = c.length;
 										break;
 									}
-									if (c[n] == ' ') continue;
-									else if (c[n] == ']' & (n+1) == c.length) {
-										z = n;
+									switch(c[n]) {
+									case ' ':
+										continue;
+									case ']':
+										if ((n+1) == c.length) {
+											z = n;
+											n = c.length; //для выхода из цикла
+										}
 										break;
-									} else if (c[n] == ',') {
+									case ',':
 										z = n;
+										n = c.length;
 										break;
-									} else break; //если идет другой символ - значит кавычка не закрывающая
+									default:
+										n = c.length;
+									}
 								}
 								if (z > -1) { //сохранение элементов
 									list.add(str.substring((f+1), i));
@@ -826,10 +837,9 @@ public class ConfigLoader { //чтение конфига из файла и п�
 				for (int i = (index+1); i < file.length; i++) {
 					ClearResult r = clearStr(file[i]);
 					if (r.colon > -1) break; //выход из цикла при попадании на опцию или секцию
-					else if (r.hypindex == -1) continue; //пропускаем не нужное
 					String add = r.content; //получаем готовый элемент
 					if ((i+1) < file.length) {
-						String part = getFullStr(i, true);
+						String part = getFullStr((i+1));
 						if (part != null) {
 							if (add != null) add += part;
 							else add = part;
@@ -900,8 +910,16 @@ public class ConfigLoader { //чтение конфига из файла и п�
 			ClearResult r = clearStr(file[index]);
 			result.clear = r;
 			if (r.cleaned != null) {
-				if (r.content != null) { //если есть содержимое в опции - проверяем
-					char ch[] = Utils.trim(r.content).toCharArray();
+				String con = r.content;
+				if ((index+1) < file.length) {
+					String part = getFullStr((index+1));
+					if (part != null) {
+						if (con != null) con += part;
+						else con = part;
+					}
+				}
+				if (con != null) { //если есть содержимое в опции - проверяем
+					char ch[] = Utils.trim(con).toCharArray();
 					if (ch != null) { //мало ли...
 						if (ch.length > 0 && ch[0] == '[' & ch[(ch.length-1)] == ']') { //если строка закрыта в квадратные скобки
 							if (ch.length == 2) { //между скобок пусто
@@ -1036,7 +1054,10 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		if (get & file != null) {
 			ArrayList<String> list = new ArrayList<String>();
 			for (int i = 0; i < file.length; i++) { //парсинг имени всех опций в лист
-				if (isSet(i) & !isSection(i)) list.add(clearStr(file[i]).name);
+				if (isSet(i) & !isSection(i)) {
+					String name = clearStr(file[i]).name;
+					if (name != null) list.add(name);
+				}
 				else if (isSection(i)) {
 					i += getSectionRealLength(i)-1; //секции пропускаем
 					continue;
@@ -1777,7 +1798,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		 * получить весь класс
 		 * @return new LoaderMethods()
 		 */
-		public LoaderMethods getmethods() {return new LoaderMethods();} //получить весь класс
+		public LoaderMethods getMethods() {return new LoaderMethods();} //получить весь класс
 		/**
 		 * получить индекс переменной по имени
 		 * @param name имя переменной
@@ -1928,11 +1949,10 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		/**
 		 * получить все строки как одну (до первого параметра)
 		 * @param index индекс в массиве
-		 * @param array true при чтении значения из многострочного массива
 		 * @return все строки одной строкой (применяется при чтении значения опций)
 		 */
-		public String recFullStr(int index, boolean array) {
-			return getFullStr(index, array);
+		public String recFullStr(int index) {
+			return getFullStr(index);
 		}
 	}
 	/**
