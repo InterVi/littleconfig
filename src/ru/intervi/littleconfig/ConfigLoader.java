@@ -179,7 +179,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		 */
 		public boolean broken = true;
 		/**
-		 * является ли строка пустой (1 и менее символов)
+		 * является ли строка пустой
 		 */
 		public boolean empty;
 		/**
@@ -240,16 +240,21 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		 * заключено ли название переменной в кавычки
 		 */
 		public boolean quname;
+		/**
+		 * индекс лишней кавычки вначале (-1 если ее нет)
+		 */
+		public int exquote = -1;
 	}
 	
 	private ClearResult clearStr(String s) { //очистка строки от комментов
 		ClearResult result = new ClearResult();
 		if (s == null) return result;
 		result.origin = s;
-		if (Utils.trim(s).length() <= 1) { //нормальная строка не может быть в 1 символ
+		int sleng = Utils.trim(s).length();
+		if (sleng == 0) {
 			result.empty = true;
 			return result;
-		}
+		} else if (sleng < 2) return result; //строку в 1 символ нет смысла обрабатывать
 		if (s.trim().charAt(0) == '#') { //если коммент во всю строку
 			result.comindex = 0;
 			result.com = s.substring(1, s.length());
@@ -264,9 +269,11 @@ public class ConfigLoader { //чтение конфига из файла и п�
 				ci = -1, //комментарий
 				p = 0, //пробелы
 				sq = -1, sq2 = -1, //квадратные скобки
-				hyp = -1; //тире
-		boolean qn = false; //заключено ли название в кавычки
-		boolean br = false; //прервать ли цикл
+				hyp = -1, //тире
+				stq = -1, //страховочный механизм
+				sts = -1;
+		boolean qn = false, //заключено ли название в кавычки
+				br = false; //прервать ли цикл
 		
 		for (int i = 0; i < c.length; i++) {
 			if (br) break; //прерывание обработки в случае нахождения ошибки
@@ -279,13 +286,13 @@ public class ConfigLoader { //чтение конфига из файла и п�
 				char qc = '\u0000'; //символ кавычки
 				switch(c[i]) {
 				case ':':
-					if (i != 0 | i != (p+1)) d = i; else br = true; //если перед двоеточием нет символов - опция бракованная
+					if (i != 0 | i != p) d = i; else br = true; //если перед двоеточием нет символов - опция бракованная
 					continue;
 				case '-': //нахождения дефиса (для корректной очистки элементов массивов)
-					if (i == 0 | i == (p+1)) hyp = i; else br = true; //перед дефисом наоборот символов быть не должно
+					if (i == 0 | i == p) hyp = i; else br = true; //перед дефисом наоборот символов быть не должно
 					continue;
 				case '"': //обработка названий, заключенных в кавычки
-					if (i == 0 | i == (p+1)) { //та же проверка - перед кавычкой не должно быть символов
+					if (i == 0 | i == p) { //та же проверка - перед кавычкой не должно быть символов
 						qf = true;
 						qc = '"';
 					} else {
@@ -294,7 +301,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 					}
 					break;
 				case '\'':
-					if (i == 0 | i == (p+1)) {
+					if (i == 0 | i == p) {
 						qf = true;
 						qc = '\'';
 					} else {
@@ -338,10 +345,14 @@ public class ConfigLoader { //чтение конфига из файла и п�
 							if ((i-d) > 1) {
 								boolean ok = true; //только если кавычка - первый символ после имени опции
 								for (int n = (d+1); n < i; n++) {
-									if (c[n] != ' ') {
+									if (c[n] != ' ' & c[n] != '"' & c[n] != '\'') {
 										ok = false;
 										break;
 									}
+								}
+								if ((i+1) < c.length && c[(i+1)] == '"' | c[(i+1)] == '\'') {
+									result.exquote = i;
+									continue;
 								}
 								if (ok) q = i;
 							} else q = i;
@@ -349,15 +360,19 @@ public class ConfigLoader { //чтение конфига из файла и п�
 						}
 					} else if (sq2 >= sq) { //поиск второй кавычки
 						if (q2 == -1 && c[i] == '"') {
+							stq = i;
 							boolean ok = true; //только если кавычка действительно на конце строки
 							for (int n = (i+1); n < c.length; n++) {
-								if (c[n] == '#') {
+								switch(c[n]) {
+								case ' ':
+									continue;
+								case '#':
 									ci = n;
+									n = c.length;
 									break;
-								}
-								if (c[n] != ' ') {
+								default:
 									ok = false;
-									break;
+									n = c.length;
 								}
 							}
 							if (ok) {
@@ -373,10 +388,14 @@ public class ConfigLoader { //чтение конфига из файла и п�
 							if ((i-d) > 1) {
 								boolean ok = true; //та же проверка
 								for (int n = (d+1); n < i; n++) {
-									if (c[n] != ' ') {
+									if (c[n] != ' ' & c[n] != '"' & c[n] != '\'') {
 										ok = false;
 										break;
 									}
+								}
+								if ((i+1) < c.length && c[(i+1)] == '"' | c[(i+1)] == '\'') {
+									result.exquote = i;
+									continue;
 								}
 								if (ok) q3 = i;
 							} else q3 = i;
@@ -384,6 +403,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 						}
 					} else if (sq2 >= sq) { //поиск второй кавычки
 						if (q4 == -1 && c[i] == '\'') {
+							stq = i;
 							boolean ok = true; //только если кавычка действительно на конце строки
 							for (int n = (i+1); n < c.length; n++) {
 								if (c[n] == '#') {
@@ -421,6 +441,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 				} else { //поиск второй скобки
 					if (sq2 == -1) {
 						if (c[i] == ']') {
+							sts = i;
 							boolean ok = true; //только если скобка действительно на конце строки
 							for (int n = (i+1); n < c.length; n++) {
 								if (c[n] == '#') {
@@ -452,6 +473,17 @@ public class ConfigLoader { //чтение конфига из файла и п�
 			}
 		}
 		
+		/*
+		 * страховочный механизм
+		 * если вторая кавычка не найдена на конце строки,
+		 * значит после нее идут лишние символы
+		 */
+		if (q2 == -1 && q4 == -1 && stq != -1) {
+			if (q != -1) q2 = stq;
+			else q4 = stq;
+		}
+		if (sq != -1 && sq2 == -1 && sts != -1) sq2 = sts; //тоже самое с квадратными скобками
+		
 		//заполнение результатов
 		result.probels = p;
 		result.firstsq = sq;
@@ -473,9 +505,14 @@ public class ConfigLoader { //чтение конфига из файла и п�
 				result.content = s.substring((q3+1), q4);
 				result.broken = false;
 			}
+		} else {
+			if (q >= 0 & q3 == -1) result.firstquote = q;
+			if (q3 >= 0 & q == -1) result.firstquote = q3;
+			if (q2 >= 0 & q4 == -1) result.lastquote = q2;
+			if (q4 >= 0 & q2 == -1) result.lastquote = q4;
 		}
 		if (d > -1) {
-			if (q == -1 & q2 == -1 && q3 == -1 & q4 == -1) {
+			if (q2 == -1 && q4 == -1) {
 				//если кавычек нет - вырезаем контент между двоеточием и концом строки (или комментом)
 				char ch[] = s.trim().toCharArray();
 				boolean ok = true; //проверка, есть ли контент между двоеточием и комментом (кроме пробелов)
@@ -520,8 +557,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	 * ---------------ЧТЕНИЕ ДАННЫХ ИЗ СТРОК
 	 * ======================================================================================
 	 */
-	private String getFullStr(int index) { //получить все компоненты опции, если значение разбросано на строки
-		//index - всегда следующий после первой части опции с названием
+	private String getFullStr(int index) { //получить полное значение опции / элемента массива
 		if (index < 0) {
 			log.warn("ConfigLoader getFullStr: failed, index < 0");
 			return null;
@@ -536,58 +572,138 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		}
 		String result = null;
 		int p = 0;
-		if ((index-1) >= 0) p = getProbels(file[(index-1)]);
+		if (index >= 0) p = getProbels(file[index]);
+		boolean oq = false, //использовались ли разбросанные скобки
+				br = false; //выход из цикла
+		char oqc = '\u0000'; //используемый символ
 		for (int i = index; i < file.length; i++) {
 			ClearResult cr = clearStr(file[i]);
-			if (cr.empty) continue;
-			if (!cr.broken) break; //если строка - не часть значения другого параметра
-			if (cr.hypindex != -1) break; //то же с элементами массивов
-			if (cr.cleaned == null) continue;
+			if (i == index) {
+				if (!cr.broken | cr.hypindex != -1) {
+					result = cr.content;
+					if (cr.firstquote != -1 & cr.lastquote == -1 || cr.exquote != -1) { //выявление незакрытой кавычки
+						oq = true;
+						if (cr.exquote == -1) oqc = cr.origin.charAt(cr.firstquote);
+						else oqc = cr.origin.charAt(cr.exquote);
+					}
+					continue;
+				} else if (cr.broken & cr.colon != -1) continue; else break;
+			}
+			if (cr.empty | cr.origin == null | cr.fullstr) continue;
+			if (cr.colon != -1 | cr.hypindex != -1) break; //если строка - не часть значения другого параметра
 			if (getProbels(file[i]) < p) break; //если у строки пробелов в начале меньше - это не часть значения
-			if (!isSet(i)) { //еще одна проверка, что строка - не опция
-				String part = cr.origin.trim();
-				char c[] = part.toCharArray();
-				char qc = '\u0000'; //символ кавычки
-				boolean q = false; //заключена ли строка в кавычки
-				int ind[] = {0, c.length}; //индексы для обрезки строки
-				switch(c[0]) { //определение кавычки
-				case '\'':
-					qc = '\'';
-					q = true;
-					ind[0] = 1;
-					break;
-				case '"':
-					qc = '"';
-					q = true;
-					ind[0] = 1;
-				}
-				for (int n = 0; n < c.length; n++) { //посимвольный анализ
-					if (n == 0 & q) continue;
-					if (q) {
-						if (c[n] == qc) { //найдена вторая кавычка
-							boolean ok = true;
-							for (int k = (n+1); k < c.length; k++) { //проверка, что она действительно закрывающая
-								if (c[k] != ' ' | c[k] != '#') { //на конце ничего не должно быть (кроме коммента)
-									ok = false;
-									break;
-								}
-							}
-							if (ok) {
-								ind[1] = n;
+			String part = cr.origin.trim();
+			char c[] = part.toCharArray();
+			char qc = '\u0000'; //символ кавычки
+			boolean q = false; //заключена ли строка в кавычки
+			int ind[] = {0, c.length}; //индексы для обрезки строки
+			switch(c[0]) { //определение первой кавычки
+			case '\'':
+				qc = '\'';
+				q = true;
+				ind[0] = 1;
+				break;
+			case '"':
+				qc = '"';
+				q = true;
+				ind[0] = 1;
+			}
+			int st = -1; //страховка
+			for (int n = 0; n < c.length; n++) { //посимвольный анализ
+				if (n == 0 & q) continue;
+				if (q) {
+					if (c[n] == qc) { //найдена вторая кавычка
+						st = n;
+						boolean ok = true;
+						for (int k = (n+1); k < c.length; k++) { //проверка, что она действительно закрывающая
+							switch(c[k]) { //на конце ничего не должно быть (кроме коммента)
+							case ' ':
+								continue;
+							case '#':
+								k = c.length;
 								break;
+							case '"':
+								if (oq && oqc == '"') {
+									br = true;
+									k = c.length;
+								}
+								else ok = false;
+								break;
+							case '\'':
+								if (oq && oqc == '\'') {
+									br = true;
+									k = c.length;
+								}
+								else ok = false;
+								break;
+							default:
+								ok = false;
 							}
 						}
-					} else { //если кавычки не используются, простой способ выявления коммента на конце
-						if (c[n] == '#') {
+						if (ok) {
+							ind[0] = 1;
 							ind[1] = n;
+							break;
+						} else ind[0] = 0;
+					} else if ((n+1) == c.length) { //повтор цикла, если закрывающая кавычка не найдена
+						if (st == -1) {
+							q = false;
+							n = 0;
+							st = -1;
+						} else {
+							ind[0] = 1;
+							ind[1] = st;
 							break;
 						}
 					}
+				} else { //если кавычки не используются, простой способ выявления коммента на конце
+					switch(c[n]) {
+					case '#':
+						ind[1] = n;
+						n = c.length;
+						break;
+					case '"':
+						if (oq && oqc == '"') {
+							br = true;
+							ind[1] = n;
+							st = n;
+						}
+						break;
+					case '\'':
+						if (oq && oqc == '\''){
+							br = true;
+							ind[1] = n;
+							st = n;
+						}
+					}
+					if (br) { //проверка, что кавычка закрывающая
+						for (int k = (n+1); k < c.length; k++) {
+							switch(c[k]) {
+							case ' ':
+								continue;
+							case '#':
+								k = c.length;
+								break;
+							default:
+								br = false;
+								ind[1] = c.length;
+								k = c.length;
+							}
+						}
+					}
+					if (!br && (n+1) == c.length && st != -1) { //страховночный механизм
+						br = true;
+						ind[1] = st;
+					}
 				}
-				//обрезка и сохранение значения
-				if (result == null) result = part.substring(ind[0], ind[1]);
-				else result += part.substring(ind[0], ind[1]);
-			} else break;
+			}
+			//обрезка и сохранение значения
+			if (result == null) result = part.substring(ind[0], ind[1]);
+			else result += part.substring(ind[0], ind[1]);
+			if (br) {
+				result = result.substring(1, result.length()); //обрезаем кавычку (вторая уже обрезана)
+				break;
+			}
 		}
 		return result;
 	}
@@ -598,22 +714,8 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		if (index >= file.length) {log.warn("ConfigLoader getString(index): failed, index >= file.length"); return result;}
 		if (get & file != null) { //поиск и получение переменной из массива
 			if (isSet(index)) {
-				ClearResult r = clearStr(file[index]);
-				if (!r.broken & !r.fullstr) {
-					if (r.content != null) {
-						result = r.content;
-						if ((index+1) < file.length) { //добавление остальных линий
-							String part = getFullStr((index+1));
-							if (part != null) result += part;
-						}
-					} else {
-						if ((index+1) < file.length) { //добавление остальных линий
-							String part = getFullStr((index+1));
-							if (part != null) result = part;
-						}
-					}
-					if (result == null) log.warn("ConfigLoader getString(index) " + index + "(index) null content");
-				} else log.warn("ConfigLoader getString(index): " + index + "(index) broken line");
+					result = getFullStr(index);
+				if (result == null) log.warn("ConfigLoader getString(index) " + index + "(index) null content or broken");
 			} else log.warn("ConfigLoader getString(index): " + index + "(index) no data");
 		} else if (!get) log.warn("ConfigLoader getString(index): " + index + "(index) file not loaded");
 		else if (file == null) log.warn("ConfigLoader getString(index): " + index + "(index) array file = null");
@@ -744,15 +846,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		IsArray a = isArray(index);
 		if (a.array & !a.empty) {
 			if (a.skobka) { //парсинг данных из однострочного массива
-				String cl = a.clear.content;
-				if ((index+1) < file.length) {
-					String part = getFullStr((index+1));
-					if (part != null) {
-						if (cl != null) cl += part;
-						else cl = part;
-					}
-				}
-				String str = cl.substring(1, (cl.length()-1)).trim(); //отрезаем скобки
+				String str = a.content.substring(1, (a.content.length()-1)).trim(); //отрезаем скобки
 				if (Utils.numChars(str, '"') < 2 & Utils.numChars(str, '\'') < 2) { //если кавычки не применялись
 					result = str.split(",");
 					for (int i = 0; i < result.length; i++) {
@@ -836,15 +930,10 @@ public class ConfigLoader { //чтение конфига из файла и п�
 				ArrayList<String> list = new ArrayList<String>();
 				for (int i = (index+1); i < file.length; i++) {
 					ClearResult r = clearStr(file[i]);
+					if (r.empty) continue;
+					if (r.hypindex == -1) continue;
 					if (r.colon > -1) break; //выход из цикла при попадании на опцию или секцию
-					String add = r.content; //получаем готовый элемент
-					if ((i+1) < file.length) {
-						String part = getFullStr((i+1));
-						if (part != null) {
-							if (add != null) add += part;
-							else add = part;
-						}
-					}
+					String add = getFullStr(i); //получаем готовый элемент
 					if (add != null) {
 						char q1 = add.charAt(0); //чистка от кавычек
 						char q2 = add.charAt((add.length()-1));
@@ -900,6 +989,10 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		 * результат очистки строки
 		 */
 		public ClearResult clear;
+		/**
+		 * содержимое опции (для односточных массивов)
+		 */
+		public String content;
 	}
 	
 	private IsArray isArray(int index) { //проверка переменной на то, является ли она массивом
@@ -910,15 +1003,9 @@ public class ConfigLoader { //чтение конфига из файла и п�
 			ClearResult r = clearStr(file[index]);
 			result.clear = r;
 			if (r.cleaned != null) {
-				String con = r.content;
-				if ((index+1) < file.length) {
-					String part = getFullStr((index+1));
-					if (part != null) {
-						if (con != null) con += part;
-						else con = part;
-					}
-				}
+				String con = getFullStr(index);
 				if (con != null) { //если есть содержимое в опции - проверяем
+					result.content = con;
 					char ch[] = Utils.trim(con).toCharArray();
 					if (ch != null) { //мало ли...
 						if (ch.length > 0 && ch[0] == '[' & ch[(ch.length-1)] == ']') { //если строка закрыта в квадратные скобки
@@ -1054,11 +1141,12 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		if (get & file != null) {
 			ArrayList<String> list = new ArrayList<String>();
 			for (int i = 0; i < file.length; i++) { //парсинг имени всех опций в лист
-				if (isSet(i) & !isSection(i)) {
+				boolean sec = isSection(i);
+				if (isSet(i) & !sec) {
 					String name = clearStr(file[i]).name;
 					if (name != null) list.add(name);
 				}
-				else if (isSection(i)) {
+				else if (sec) {
 					i += getSectionRealLength(i)-1; //секции пропускаем
 					continue;
 				}
@@ -1073,7 +1161,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		if (index < 0) {log.warn("ConfigLoader isSet: failed, index < 0"); return result;}
 		if (index >= file.length) {log.warn("ConfigLoader isSet: failed, index > file.length"); return result;}
 		if (get & file != null) {
-			result = !clearStr(file[index]).broken; //является ли строка параметром
+			if (clearStr(file[index]).colon != -1 && getFullStr(index) != null) result = true; //является ли строка параметром
 			if (!result) result = isArray(index).array; //является ли она массивом
 			if (!result) result = isSection(index); //является ли она секцией
 		} else log.warn("ConfigLoader isSet(index): failed check " + index + ", config not loaded");
@@ -1215,9 +1303,8 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		if (get & file != null) {
 			int index = getIndexNoSection(name);
 			if (index > -1) {
-				ClearResult r = clearStr(file[index]);
-				if (!r.broken & r.firstsq == -1) result = getTypeData(r.content);
-				else if (isArray(index).array) result = getTypeData(getStringArray(index));
+				if (isArray(index).array) result = getTypeData(getStringArray(index));
+				else result = getTypeData(getFullStr(index));
 			} else if (isSection(name)) result = TypeValue.SECTION;
 		} else log.warn("ConfigLoader getType: failed get " + name + ", config not loaded or file == null");
 		return result;
@@ -1264,12 +1351,9 @@ public class ConfigLoader { //чтение конфига из файла и п�
 					i += getSectionRealLength(i)-1;
 					continue;
 				}
-				ClearResult r = clearStr(file[i]);
-				if (!r.broken || isArray(i).array & r.name != null) {
-					if (r.name.equals(name)) {
-						result = i;
-						break;
-					}
+				if (isSet(i) && clearStr(file[i]).name.equals(name)) {
+					result = i;
+					break;
 				}
 			}
 		} else log.warn("ConfigLoader getIndexNoSection: failed get " + name + ", config not loaded or file == null");
@@ -1282,13 +1366,13 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		if (index >= file.length) {log.warn("ConfigLoader isSection: failed, index > file.length"); return result;}
 		if (get & file != null) {
 			ClearResult r = clearStr(file[index]);
-			if (r.cleaned != null && r.broken & (r.colon+1) == r.cleaned.length() && r.name != null) { //строка не должна быть опцией
+			if (r.broken & r.colon != -1) { //строка не должна быть опцией
 				int p = getProbels(file[index])+1;
 				for (int i = (index+1); i < file.length; i++) {
 					if (p > getProbels(file[i])) break; //выход из цикла
 					ClearResult c = clearStr(file[i]);
 					if (c.empty | c.fullstr) continue; //пропуск не нужного
-					if (c.colon > -1 & c.name != null) { //если найдена опция - значит это секция
+					if (c.colon > -1) { //если найдена опция - значит это секция
 						result = true;
 						break;
 					}
@@ -1306,14 +1390,14 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	public boolean isSection(String name) { //проверка, является ли переменная секцией (по названию)
 		boolean result = false;
 		if (name == null) {log.warn("ConfigLoader isSection: null name"); return false;}
-		if (get == true && file != null) {
+		if (get && file != null) {
 			if (getIndexSection(name) > -1) result = true;
 		} else log.warn("ConfigLoader isSection(name): failed check " + name + ", config not loaded or file[i] == null");
 		return result;
 	}
 	
 	/**
-	 * получить названия переменных в данной секции (не проверяются методом isSet, не включает названия секций)
+	 * получить названия переменных в данной секции (не включает названия секций)
 	 * @param name имя секции
 	 * @return названия переменных в виде массива строк (null, если ничего не найдено)
 	 */
@@ -1330,11 +1414,11 @@ public class ConfigLoader { //чтение конфига из файла и п�
 					ClearResult r = clearStr(file[i]);
 					if (r.empty | r.fullstr | r.name == null) continue; //пропуск не нужного
 					if (r.colon > -1 & getProbels(file[i]) < p) break; //выход из цикла, конец секции
-					if (isSection(index)) {
+					if (isSection(i)) {
 						i += getSectionRealLength(i)-1; //пропуск секций
 						continue;
 					}
-					if (r.colon > -1 & r.name != null) list.add(r.name);
+					if (r.colon > -1 & isSet(i)) list.add(r.name);
 				}
 				result = list.toArray(new String[list.size()]);
 			}
@@ -1495,6 +1579,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	 */
 	public ConfigLoader getSection(String name) {
 		if (name == null) {log.warn("ConfigLoader getSection: null name"); return null;}
+		if (!get | file == null) {log.warn("ConfigLoader getSection: config not set"); return null;}
 		int index = getIndexSection(name);
 		ConfigLoader loader = null;
 		if (index >= 0) loader = getSection(index);
@@ -1510,6 +1595,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	 */
 	public ConfigLoader getSectionInSection(String section, String name) {
 		if (name == null | section == null) {log.warn("ConfigLoader getSectionInSection: null name or null section"); return null;}
+		if (!get | file == null) {log.warn("ConfigLoader getSectionInSection: config not set"); return null;}
 		int index = getIndexSection(name);
 		ConfigLoader loader = null;
 		if (index >= 0) {
@@ -1919,11 +2005,15 @@ public class ConfigLoader { //чтение конфига из файла и п�
 						ClearResult r = clearStr(file[i]);
 						if (r.hypindex > -1) { //выход из цикла при попадании на последний элемент массива
 							result -= (index+result-1)-i;
+							int rl = getOptionRealLength(i);
+							if (rl > 1) {
+								result += rl-1;
+							}
 							break;
 						}
 					}
 				}
-			}
+			} else log.warn("LoaderMethods getArrayRealLength: index " + String.valueOf(index) + " not array");
 			return result;
 		}
 		/**
@@ -1953,6 +2043,83 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		 */
 		public String recFullStr(int index) {
 			return getFullStr(index);
+		}
+		/**
+		 * узнать реальную длинну опции или элемента массива в конфиге
+		 * @param index индекс опции или элемента массива в конфиге
+		 * @return -1 в случае ошибки; 0 если опция пуста; количество строк, которое занимает значение опции или элемента массива в конфиге
+		 */
+		public int getOptionRealLength(int index) {
+			if (index < 0) {log.warn("LoaderMethods getOptionRealLength: index < 0"); return -1;}
+			if (!get | file == null) {log.warn("LoaderMethods getOptionRealLength: config not set"); return -1;}
+			int result = 0;
+			ClearResult cr = clearStr(file[index]);
+			if (!cr.broken) result++;
+			else if (cr.hypindex != -1 && cr.content != null) result++;
+			int p = getProbels(file[index]);
+			for (int i = (index+1); i < file.length; i++) { //поиск остальных частей
+				ClearResult r = clearStr(file[i]);
+				if (r.empty | r.origin == null | r.fullstr) continue; //выход при попадании на опцию
+				if (r.colon != -1 | r.hypindex != -1) break;
+				if (getProbels(file[i]) < p) break;
+				result++;
+				if (cr.firstquote != -1 & cr.lastquote == -1 || cr.exquote != -1) {
+					//если испольховались разбросанные кавычки - надо найти закрывающую
+					char c[] = r.origin.toCharArray();
+					char fq = '\u0000';
+					switch(c[0]) { //определение первой кавычки в строке
+					case '"':
+						fq = '"';
+						break;
+					case '\'':
+						fq = '\'';
+						break;
+					default:
+						char cc = '\u0000';
+						if (cr.exquote != -1) cc = cr.origin.charAt(cr.exquote);
+						else cc = cr.origin.charAt(cr.firstquote);
+						for (int n = 1; n < c.length; n++) {
+							if (c[n] == cc) i = file.length;
+						}
+					}
+					boolean f = false;
+					if (fq == '\u0000') f = true;
+					for (int n = 0; n < c.length; n++) {
+						//поиск закрывающих кавычек
+						if (fq != '\u0000' && c[n] == fq) f = true; //найдена вторая кавычка
+						if (f) {
+							for (int k = (n+1); k < c.length; k++) { //проверка, точно ли кавычка закрывающая
+								switch(c[k]) {
+								case ' ':
+									continue;
+								case '#':
+									continue;
+								case '"':
+									if (cr.origin.charAt(cr.firstquote) == '"') {
+										i = file.length;
+										n = c.length;
+										k = c.length;
+										break;
+									} else k = c.length;
+								case '\'':
+									if (cr.origin.charAt(cr.firstquote) == '\'') {
+										i = file.length;
+										n = c.length;
+										k = c.length;
+										break;
+									} else k = c.length;
+								default:
+									k = c.length;
+								}
+							}
+						} else if ((n+1) == c.length) { //повтор цикла, если закрывающая кавычка строки не найдена
+							f = true;
+							n = 0;
+						}
+					}
+				}
+			}
+			return result;
 		}
 	}
 	/**

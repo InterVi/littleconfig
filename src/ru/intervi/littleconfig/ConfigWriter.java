@@ -171,6 +171,7 @@ public class ConfigWriter { //запись и изменение конфига
 						rep[(rep.length-1)] = name + ": " + value;
 						file = rep;
 					}
+					neew = false;
 				} else log.warn("ConfigWriter: cannot write var " + name + ", var not found");
 			} else log.warn("ConfigWriter: error write var " + name + ", config file not set");
 		} else log.warn("ConfigWriter: error write var " + name + ", config file not set");
@@ -280,6 +281,7 @@ public class ConfigWriter { //запись и изменение конфига
 					}
 					file = newfile.toArray(new String[newfile.size()]);
 				}
+				neew = false;
 			} else log.warn("ConfigWriter: error write array " + name + ", config file not set");
 		} else log.warn("ConfigWriter: error write array " + name + ", config file not set");
 	}
@@ -489,10 +491,10 @@ public class ConfigWriter { //запись и изменение конфига
 					if (skobka) {
 						delOption(name, index);
 					} else {
-						int leng = loader.methods.recStringArray(index).length;
+						int leng = loader.methods.getArrayRealLength(index);
 						ArrayList<String> newfile = new ArrayList<String>();
 						for (int i = 0; i < index; i++) newfile.add(file[i]);
-						for (int i = (index+leng+1); i < file.length; i++) newfile.add(file[i]);
+						for (int i = (index+leng); i < file.length; i++) newfile.add(file[i]);
 						file = newfile.toArray(new String[newfile.size()]);
 					}
 				} else log.warn("ConfigWriter: error delete array " + name + ", array not found");
