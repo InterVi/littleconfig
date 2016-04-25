@@ -158,13 +158,17 @@ public class ConfigWriter { //запись и изменение конфига
 					if (ind == -1) index = loader.methods.recIndexNoSection(name); else index = ind;
 					if (index > -1) { //перезаписываем переменную, если она есть
 						ClearResult r = loader.methods.clearString(file[index]);
-						if (r.broken) return; //страховка
+						int leng = loader.methods.getOptionRealLength(index);
 						String p = "";
 						int prob = loader.methods.recProbels(file[index]);
 						for (int i = 0; i <= prob; i++) p += ' ';
 						String rep = p + r.name + ": " + value; //подменяем значение
 						if (r.com != null) rep += " #" + r.com; //возвращаем комментарий, если он был
-						file[index] = rep;
+						ArrayList<String> list = new ArrayList<String>();
+						for (int i = 0; i < index; i++) list.add(file[i]);
+						list.add(rep);
+						for (int i = (index+leng); i < file.length; i++) list.add(file[i]);
+						file = list.toArray(new String[list.size()]);
 					} else { //если нет, то добавляем ее в конфиг
 						String rep[] = new String[(file.length+1)];
 						for (int i = 0; i < file.length; i++) rep[i] = file[i];
@@ -461,9 +465,10 @@ public class ConfigWriter { //запись и изменение конфига
 				loader.fakeLoad(file);
 				int index = ind; if (index == -1) index = loader.methods.recIndexNoSection(name);
 				if (index > -1) {
+					int leng = loader.methods.getOptionRealLength(index);
 					ArrayList<String> newfile = new ArrayList<String>();
 					for (int i = 0; i < index; i++) newfile.add(file[i]);
-					for (int i = (index+1); i < file.length; i++) newfile.add(file[i]);
+					for (int i = (index+leng); i < file.length; i++) newfile.add(file[i]);
 					file = newfile.toArray(new String[newfile.size()]);
 				} else log.warn("ConfigWriter: error delete var " + name + ", var not found");
 			} else log.warn("ConfigWriter: error delete var " + name + ", config file not found");

@@ -241,7 +241,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		 */
 		public boolean quname;
 		/**
-		 * индекс лишней кавычки вначале (-1 если ее нет)
+		 * индекс лишней кавычки вначале (-1 если ее нет, может быть равно firstquote, если вначале значения несколько кавычек)
 		 */
 		public int exquote = -1;
 	}
@@ -271,9 +271,11 @@ public class ConfigLoader { //чтение конфига из файла и п�
 				sq = -1, sq2 = -1, //квадратные скобки
 				hyp = -1, //тире
 				stq = -1, //страховочный механизм
-				sts = -1;
+				sts = -1,
+				stf = -1, stff = -1, stt = -1; //страховка для первой кавычки
 		boolean qn = false, //заключено ли название в кавычки
-				br = false; //прервать ли цикл
+				br = false, //прервать ли цикл
+				str = false; //страховка для первой кавычки, ftf == stff
 		
 		for (int i = 0; i < c.length; i++) {
 			if (br) break; //прерывание обработки в случае нахождения ошибки
@@ -342,20 +344,22 @@ public class ConfigLoader { //чтение конфига из файла и п�
 				if (q3 == -1) {
 					if (q == -1) {
 						if (c[i] == '"' && sq == -1) { //поиск кавычки
+							boolean ok = true; //только если кавычка - первый символ после имени опции
 							if ((i-d) > 1) {
-								boolean ok = true; //только если кавычка - первый символ после имени опции
 								for (int n = (d+1); n < i; n++) {
-									if (c[n] != ' ' & c[n] != '"' & c[n] != '\'') {
+									if (c[n] != ' ' && c[n] != '"' && c[n] != '\'') {
 										ok = false;
 										break;
 									}
 								}
-								if ((i+1) < c.length && c[(i+1)] == '"' | c[(i+1)] == '\'') {
-									result.exquote = i;
-									continue;
-								}
-								if (ok) q = i;
-							} else q = i;
+							}
+							//определение лишней кавычки вначале
+							if (stt != i && (i+1) < c.length && c[(i+1)] == '"' | c[(i+1)] == '\'') {
+								if (stff == -1) stff = i; stf = i;
+								if (result.exquote == -1) result.exquote = i;
+								continue;
+							}
+							if (ok) q = i;
 							continue;
 						}
 					} else if (sq2 >= sq) { //поиск второй кавычки
@@ -366,10 +370,6 @@ public class ConfigLoader { //чтение конфига из файла и п�
 								switch(c[n]) {
 								case ' ':
 									continue;
-								case '#':
-									ci = n;
-									n = c.length;
-									break;
 								default:
 									ok = false;
 									n = c.length;
@@ -377,7 +377,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 							}
 							if (ok) {
 								q2 = i;
-								continue;
+								if ((i+1) != c.length) continue;
 							} else continue;
 						}
 					}
@@ -385,20 +385,21 @@ public class ConfigLoader { //чтение конфига из файла и п�
 				if (q == -1) {
 					if (q3 == -1) {
 						if (c[i] == '\'' && sq == -1) { //поиск кавычки другого вида
+							boolean ok = true; //та же проверка
 							if ((i-d) > 1) {
-								boolean ok = true; //та же проверка
 								for (int n = (d+1); n < i; n++) {
-									if (c[n] != ' ' & c[n] != '"' & c[n] != '\'') {
+									if (c[n] != ' ' && c[n] != '"' && c[n] != '\'') {
 										ok = false;
 										break;
 									}
 								}
-								if ((i+1) < c.length && c[(i+1)] == '"' | c[(i+1)] == '\'') {
-									result.exquote = i;
-									continue;
-								}
-								if (ok) q3 = i;
-							} else q3 = i;
+							}
+							if (stt != i && (i+1) < c.length && c[(i+1)] == '"' | c[(i+1)] == '\'') {
+								if (stff == -1) stff = i; stf = i;
+								if (result.exquote == -1) result.exquote = i;
+								continue;
+							}
+							if (ok) q3 = i;
 							continue;
 						}
 					} else if (sq2 >= sq) { //поиск второй кавычки
@@ -406,18 +407,17 @@ public class ConfigLoader { //чтение конфига из файла и п�
 							stq = i;
 							boolean ok = true; //только если кавычка действительно на конце строки
 							for (int n = (i+1); n < c.length; n++) {
-								if (c[n] == '#') {
-									ci = n;
-									break;
-								}
-								if (c[n] != ' ') {
+								switch(c[n]) {
+								case ' ':
+									continue;
+								default:
 									ok = false;
-									break;
+									n = c.length;
 								}
 							}
 							if (ok) {
 								q4 = i;
-								continue;
+								if ((i+1) != c.length) continue;
 							} else continue;
 						}
 					}
@@ -469,6 +469,38 @@ public class ConfigLoader { //чтение конфига из файла и п�
 					if (d == -1) result.fullstr = true;
 					ci = i;
 					break;
+				}
+			}
+			if ((i+1) == c.length) {
+				//повтор цикла с поиском другой кавычки
+				if (!str && q2 == -1 && q4 == -1 && stf != -1) {
+					if (q == -1 && q3 == -1) break;
+					q = -1; q3 = -1; stq = -1;
+					i = stff-1;
+					if (stf == stff) str = true;
+					stt = stf; stf = -1;
+					continue;
+				}
+				//для правильной обработки одинаковых кавычек вначале
+				char sc = '\u0000';
+				if (stt < q || stt == q) sc = '"';
+				else if (stt < q3 || stt == q3) sc = '\'';
+				if (sc != '\u0000') {
+					for (int n = (q-1); n > d && n > hyp; n--) {
+						if (c[n] == sc) {
+							switch(sc) {
+							case '"':
+								i = q;
+								q = n;
+								break;
+							case '\'':
+								i = q3;
+								q3 = n;
+							}
+							q2 = -1; q4 = -1; stq = -1;
+							break;
+						}
+					}
 				}
 			}
 		}
@@ -546,6 +578,9 @@ public class ConfigLoader { //чтение конфига из файла и п�
 			result.cleaned = s.substring(0, ci).trim();
 			result.com = s.substring((ci+1), s.length());
 			result.clear = true;
+		} else if ((q != -1 || q3 != -1) && (q2 == -1 && q4 == -1)) {
+			int cii = s.indexOf('#');
+			if (cii != -1) result.cleaned = s.substring(0, cii);
 		} else result.cleaned = s;
 
 		return result;
