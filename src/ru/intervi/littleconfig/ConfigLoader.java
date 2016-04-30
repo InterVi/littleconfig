@@ -26,19 +26,19 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	public ConfigLoader() {}
 	/**
 	 * вызывает метод {@link ru.intervi.littleconfig.ConfigLoader#load(String, boolean)}
-	 * @param file путь к конфигу
-	 * @param gap true - читать до первого разрыва ("..."), false - весь файл
+	 * @param path путь к конфигу
+	 * @param gap true - читать до первого разрыва ("..." или "---"), false - весь файл
 	 * @throws NullPointerException если File == null
 	 * @throws FileNotFoundException если файл не существует
 	 * @throws IOException потоковая ошибка
 	 */
-	public ConfigLoader(String file, boolean gap) throws NullPointerException, FileNotFoundException, IOException {
-		load(file, gap);
+	public ConfigLoader(String path, boolean gap) throws NullPointerException, FileNotFoundException, IOException {
+		load(path, gap);
 	}
 	/**
 	 * вызывает метод {@link ru.intervi.littleconfig.ConfigLoader#load(File, boolean)}
 	 * @param file объект File конфига для чтения
-	 * @param gap true - читать до первого разрыва ("..."), false - весь файл
+	 * @param gap true - читать до первого разрыва ("..." или "---"), false - весь файл
 	 * @throws NullPointerException если File == null
 	 * @throws FileNotFoundException если файл не существует
 	 * @throws IOException потоковая ошибка
@@ -51,6 +51,26 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	 * @param value конфиг в виде массива строк
 	 */
 	public ConfigLoader(String value[]) {fakeLoad(value);}
+	/**
+	 * вызывает метод {@link ru.intervi.littleconfig.ConfigLoader#load(String, boolean)} с false
+	 * @param path путь к конфигу
+	 * @throws NullPointerException если File == null
+	 * @throws FileNotFoundException если файл не существует
+	 * @throws IOException потоковая ошибка
+	 */
+	public ConfigLoader(String path) throws NullPointerException, FileNotFoundException, IOException {
+		load(path, false);
+	}
+	/**
+	 * вызывает метод {@link ru.intervi.littleconfig.ConfigLoader#load(File, boolean)} с false
+	 * @param file объект File конфига для чтения
+	 * @throws NullPointerException если File == null
+	 * @throws FileNotFoundException если файл не существует
+	 * @throws IOException потоковая ошибка
+	 */
+	public ConfigLoader(File file) throws NullPointerException, FileNotFoundException, IOException {
+		load(file, false);
+	}
 	
 	/**
 	 * ======================================================================================
@@ -99,7 +119,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	/**
 	 * прочитать конфиг (вызовет {@link ru.intervi.littleconfig.ConfigLoader#load(File, boolean)})
 	 * @param path путь к конфигу
-	 * @param gap true - читать до первого разрыва ("..."), false - весь файл
+	 * @param gap true - читать до первого разрыва ("..." или "---"), false - весь файл
 	 * @throws NullPointerException если File == null
 	 * @throws FileNotFoundException если файл не существует
 	 * @throws IOException потоковая ошибка
@@ -115,7 +135,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	/**
 	* прочитать конфиг
 	 * @param file объект File конфига для чтения
-	 * @param gap true - читать до первого разрыва ("..."), false - весь файл
+	 * @param gap true - читать до первого разрыва ("..." или "---"), false - весь файл
 	 * @throws NullPointerException если File == null
 	 * @throws FileNotFoundException если файл не существует
 	 * @throws IOException потоковая ошибка
@@ -130,7 +150,10 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		while(reader.ready()) {
 			String line = reader.readLine();
 			if (line != null) {
-				if (gap && line.trim().equals("...")) break;
+				if (gap && line.trim().length() >= 3) {
+					String check = line.trim().substring(0, 4);
+					if (check.equals("...") || check.equals("---")) break;
+				}
 				list.add(line);
 			}
 		}
@@ -1916,11 +1939,6 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	 */
 	public class LoaderMethods { //класс со внутренними методами
 		/**
-		 * получить весь класс
-		 * @return new LoaderMethods()
-		 */
-		public LoaderMethods getMethods() {return new LoaderMethods();} //получить весь класс
-		/**
 		 * получить индекс переменной по имени
 		 * @param name имя переменной
 		 * @return индекс переменной в конфиге
@@ -2158,7 +2176,9 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		}
 	}
 	/**
-	 * инициализированный объект LoaderMethods
+	 * получить LoaderMethods
 	 */
-	public LoaderMethods methods = new LoaderMethods();
+	public LoaderMethods getMethods() {
+		return new LoaderMethods();
+	}
 }

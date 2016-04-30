@@ -9,6 +9,7 @@ import java.io.IOException;
 
 import ru.intervi.littleconfig.ConfigLoader.ClearResult;
 import ru.intervi.littleconfig.utils.EasyLogger;
+import ru.intervi.littleconfig.ConfigLoader.LoaderMethods;
 
 /**
  * запись и изменение файла конфигурации
@@ -21,14 +22,14 @@ public class ConfigWriter { //запись и изменение конфига
 	/**
 	 * вызывает метод {@link ru.intervi.littleconfig.ConfigWriter#setConfig(String, boolean)}
 	 * @param path путь к конфигу
-	 * @param gap true - читать до первого разрыва ("..."), false - весь файл
+	 * @param gap true - читать до первого разрыва ("..." или "---"), false - весь файл
 	 * @throws IOException ошибка при чтении
 	 */
 	public ConfigWriter(String path, boolean gap) throws IOException {setConfig(path, gap);}
 	/**
 	 * вызывает метод {@link ru.intervi.littleconfig.ConfigWriter#setConfig(File, boolean)}
 	 * @param file объект File конфига для записи
-	 * @param gap true - читать до первого разрыва ("..."), false - весь файл
+	 * @param gap true - читать до первого разрыва ("..." или "---"), false - весь файл
 	 * @throws IOException ошибка при чтении
 	 */
 	public ConfigWriter(File file, boolean gap) throws IOException {setConfig(file, gap);}
@@ -39,6 +40,18 @@ public class ConfigWriter { //запись и изменение конфига
 	public ConfigWriter(String value[]) {
 		setFakeConfig(value);
 	}
+	/**
+	 * вызывает метод {@link ru.intervi.littleconfig.ConfigWriter#setConfig(String, boolean)} с false
+	 * @param path путь к конфигу
+	 * @throws IOException ошибка при чтении
+	 */
+	public ConfigWriter(String path) throws IOException {setConfig(path, false);}
+	/**
+	 * вызывает метод {@link ru.intervi.littleconfig.ConfigWriter#setConfig(File, boolean)} с false
+	 * @param file объект File конфига для записи
+	 * @throws IOException ошибка при чтении
+	 */
+	public ConfigWriter(File file) throws IOException {setConfig(file, false);}
 	
 	/**
 	 * используемый логгер для вывода сообщений
@@ -68,7 +81,7 @@ public class ConfigWriter { //запись и изменение конфига
 	/**
 	 * указать файл конфига
 	 * @param path объект File конфига для записи
-	 * @param gap true - читать до первого разрыва ("..."), false - весь файл
+	 * @param gap true - читать до первого разрыва ("..." или "---"), false - весь файл
 	 * @return true если процесс удался; false если нет
 	 * @throws IOException ошибка при чтении
 	 */
@@ -148,21 +161,21 @@ public class ConfigWriter { //запись и изменение конфига
 		if (set) {
 			if (neew) { //если файл новый, то просто пишем в него опцию
 				file = new String[1];
-				file[0] = name + ": " + value;
+				file[0] = name + ": '" + value + '\'';
 				neew = false;
 			} else if (file != null) { //если конфиг уже есть, заменяем значение и перезаписываем массив строк
 				if (file.length > 0) {
-					ConfigLoader loader = new ConfigLoader();
-					loader.fakeLoad(file);
+					ConfigLoader loader = new ConfigLoader(file);
+					LoaderMethods lm = loader.getMethods();
 					int index = -1;
-					if (ind == -1) index = loader.methods.recIndexNoSection(name); else index = ind;
+					if (ind == -1) index = lm.recIndexNoSection(name); else index = ind;
 					if (index > -1) { //перезаписываем переменную, если она есть
-						ClearResult r = loader.methods.clearString(file[index]);
-						int leng = loader.methods.getOptionRealLength(index);
+						ClearResult r = lm.clearString(file[index]);
+						int leng = lm.getOptionRealLength(index);
 						String p = "";
-						int prob = loader.methods.recProbels(file[index]);
+						int prob = lm.recProbels(file[index]);
 						for (int i = 0; i <= prob; i++) p += ' ';
-						String rep = p + r.name + ": " + value; //подменяем значение
+						String rep = p + r.name + ": '" + value + '\''; //подменяем значение
 						if (r.com != null) rep += " #" + r.com; //возвращаем комментарий, если он был
 						ArrayList<String> list = new ArrayList<String>();
 						for (int i = 0; i < index; i++) list.add(file[i]);
@@ -172,7 +185,7 @@ public class ConfigWriter { //запись и изменение конфига
 					} else { //если нет, то добавляем ее в конфиг
 						String rep[] = new String[(file.length+1)];
 						for (int i = 0; i < file.length; i++) rep[i] = file[i];
-						rep[(rep.length-1)] = name + ": " + value;
+						rep[(rep.length-1)] = name + ": '" + value + '\'';
 						file = rep;
 					}
 					neew = false;
@@ -211,24 +224,24 @@ public class ConfigWriter { //запись и изменение конфига
 					file[0] = name + ":";
 					for (int i = 0; i < value.length; i++) {
 						if (value[i] == null) continue;
-						file[(i+1)] = "- " + value[i];
+						file[(i+1)] = "- '" + value[i] + '\'';
 					}
 				}
 				neew = false;
 			} else if (file != null) { //если нужно заменить значение в старом конфиге
-				ConfigLoader loader = new ConfigLoader();
-				loader.fakeLoad(file);
+				ConfigLoader loader = new ConfigLoader(file);
+				LoaderMethods lm = loader.getMethods();
 				int index = -1;
-				if (ind == -1) index = loader.methods.recIndexNoSection(name); else index = ind;
+				if (ind == -1) index = lm.recIndexNoSection(name); else index = ind;
 				if (index > -1) { //если нужно заменить значение у старого массива
 					ArrayList<String> one = new ArrayList<String>(); //содержимое до массива
 					ArrayList<String> two = new ArrayList<String>(); //после
 					ArrayList<String> paste = new ArrayList<String>(); //что вставить вместо него
 					//заполнение частей до и после массива
 					for (int i = 0; i < index; i++) one.add(file[i]);
-					for (int i = (index + loader.methods.getArrayRealLength(index)); i < file.length; i++) two.add(file[i]);
+					for (int i = (index + lm.getArrayRealLength(index)); i < file.length; i++) two.add(file[i]);
 					
-					int p = loader.methods.recProbels(file[index]);
+					int p = lm.recProbels(file[index]);
 					String pr = "";
 					for (int i = 0; i <= p; i++) pr += ' ';
 					if (skobka) { //если новый массив в скобках
@@ -243,7 +256,7 @@ public class ConfigWriter { //запись и изменение конфига
 						paste.add((pr + name + ":"));
 						for (int i = 0; i < value.length; i++) {
 							if (value[i] == null) continue;
-							paste.add((pr + "- " + value[i]));
+							paste.add((pr + "- '" + value[i] + '\''));
 						}
 					}
 					
@@ -280,7 +293,7 @@ public class ConfigWriter { //запись и изменение конфига
 						newfile.add((name + ":"));
 						for (int i = 0; i < value.length; i++) {
 							if (value[i] == null) continue;
-							newfile.add(("- " + value[i]));
+							newfile.add(("- '" + value[i] + '\''));
 						}
 					}
 					file = newfile.toArray(new String[newfile.size()]);
@@ -313,28 +326,28 @@ public class ConfigWriter { //запись и изменение конфига
 		if (set) {
 			if (!neew) { //если правится старый конфиг
 				if (file == null) {log.warn("ConfigWriter : error write var " + name + " in section " + section + ", null file");}
-				ConfigLoader loader = new ConfigLoader();
-				loader.fakeLoad(file);
-				int index = loader.methods.recIndexInSection(section, name);
+				ConfigLoader loader = new ConfigLoader(file);
+				LoaderMethods lm = loader.getMethods();
+				int index = lm.recIndexInSection(section, name);
 				if (index != -1) setOption(name, value, index); else { //если опции нет в конфиге (ее не надо заменять)
 					ArrayList<String> newfile = new ArrayList<String>(); //запись секции, если ее нет в конфиге
 					for (int i = 0; i < file.length; i++) newfile.add(file[i]);
-					int sec = loader.methods.recIndexSection(section);
+					int sec = lm.recIndexSection(section);
 					if (sec == -1) { //если создается новая секция
 						newfile.add(section + ":");
-						newfile.add("  " + name + ": " + value);
+						newfile.add("  " + name + ": '" + value + '\'');
 					} else if ((sec + loader.getSectionRealLength(section)) == file.length) { //если нужно добавить в старую, и она в конце конфига
-						int p = loader.methods.recProbels(file[sec]);
+						int p = lm.recProbels(file[sec]);
 						String prob = "  ";
 						for (int i = 0; i <= p; i++) prob += ' ';
-						newfile.add(prob + name + ": " + value);
+						newfile.add(prob + name + ": '" + value + '\'');
 					} else { //если позиция плавающая
 						newfile.clear();
 						for (int i = 0; i <= (sec + loader.getSectionRealLength(section) - 1) & i < file.length; i++) newfile.add(file[i]);
-						int p = loader.methods.recProbels(file[sec]);
+						int p = lm.recProbels(file[sec]);
 						String prob = "  ";
 						for (int i = 0; i <= p; i++) prob += ' ';
-						newfile.add(prob + name + ": " + value);
+						newfile.add(prob + name + ": '" + value + '\'');
 						for (int i = (sec + loader.getSectionRealLength(section)); i < file.length; i++) newfile.add(file[i]);
 					}
 					file = newfile.toArray(new String[newfile.size()]);
@@ -342,7 +355,7 @@ public class ConfigWriter { //запись и изменение конфига
 			} else { //если создается новый конфиг
 				file = new String[2];
 				file[0] = section + ":";
-				file[1] = "  " + name + ": " + value;
+				file[1] = "  " + name + ": '" + value + '\'';
 				neew = false;
 			}
 		} else log.warn("ConfigWriter: error write var " + name + " in section " + section + ", config file not set");
@@ -362,13 +375,13 @@ public class ConfigWriter { //запись и изменение конфига
 		if (set) {
 			if (!neew) { //если редактируется старый конфиг
 				if (file == null) {log.warn("ConfigWriter : error write array " + name + " in section " + section + ", null file");}
-				ConfigLoader loader = new ConfigLoader();
-				loader.fakeLoad(file);
-				int index = loader.methods.recIndexInSection(section, name);
+				ConfigLoader loader = new ConfigLoader(file);
+				LoaderMethods lm = loader.getMethods();
+				int index = lm.recIndexInSection(section, name);
 				if (index != -1) setArray(name, value, skobka, index); else {
 					ArrayList<String> newfile = new ArrayList<String>(); //запись массива, если его нет в конфиге
 					for (int i = 0; i < file.length; i++) newfile.add(file[i]);
-					int sec = loader.methods.recIndexSection(section);
+					int sec = lm.recIndexSection(section);
 					if (sec == -1) { //если создается новая секция
 						newfile.add(section + ":");
 						if (skobka) { //если нужно создать массив в скобках
@@ -383,11 +396,11 @@ public class ConfigWriter { //запись и изменение конфига
 							newfile.add(("  " + name + ":"));
 							for (int i = 0; i < value.length; i++) {
 								if (value[i] == null) continue;
-								newfile.add(("  - " + value[i]));
+								newfile.add(("  - '" + value[i] + '\''));
 							}
 						}
 					} else if ((sec + loader.getSectionRealLength(section)) == file.length) { //если нужно добавить в старую, и она в конце конфига
-						int p = loader.methods.recProbels(file[sec]);
+						int p = lm.recProbels(file[sec]);
 						String prob = "  ";
 						for (int i = 0; i <= p; i++) prob += ' ';
 						if (skobka) {
@@ -402,13 +415,13 @@ public class ConfigWriter { //запись и изменение конфига
 							newfile.add((prob + name + ":"));
 							for (int i = 0; i < value.length; i++) {
 								if (value[i] == null) continue;
-								newfile.add((prob + "- " + value[i]));
+								newfile.add((prob + "- '" + value[i] + '\''));
 							}
 						}
 					} else { //если позиция плавающая
 						newfile.clear();
 						for (int i = 0; i <= (sec + loader.getSectionRealLength(section) - 1) & i < file.length; i++) newfile.add(file[i]);
-						int p = loader.methods.recProbels(file[sec]);
+						int p = lm.recProbels(file[sec]);
 						String prob = "  ";
 						for (int i = 0; i <= p; i++) prob += ' ';
 						if (skobka) {
@@ -423,7 +436,7 @@ public class ConfigWriter { //запись и изменение конфига
 							newfile.add((prob + name + ":"));
 							for (int i = 0; i < value.length; i++) {
 								if (value[i] == null) continue;
-								newfile.add((prob + "- " + value[i]));
+								newfile.add((prob + "- '" + value[i] + '\''));
 							}
 						}
 						for (int i = (sec + loader.getSectionRealLength(section)); i < file.length; i++) newfile.add(file[i]);
@@ -448,7 +461,7 @@ public class ConfigWriter { //запись и изменение конфига
 					file[1] = "  " + name + ":";
 					for (int i = 2; i < file.length; i++) {
 						if (value[(i-2)] == null) continue;
-						file[i] = "  - " + value[(i-2)];
+						file[i] = "  - '" + value[(i-2) + '\''];
 					}
 					neew = false;
 				}
@@ -461,11 +474,11 @@ public class ConfigWriter { //запись и изменение конфига
 		if (set) {
 			if (!neew) {
 				if (file == null) {log.warn("ConfigWriter delOption: error, null file"); return;}
-				ConfigLoader loader = new ConfigLoader();
-				loader.fakeLoad(file);
-				int index = ind; if (index == -1) index = loader.methods.recIndexNoSection(name);
+				ConfigLoader loader = new ConfigLoader(file);
+				LoaderMethods lm = loader.getMethods();
+				int index = ind; if (index == -1) index = lm.recIndexNoSection(name);
 				if (index > -1) {
-					int leng = loader.methods.getOptionRealLength(index);
+					int leng = lm.getOptionRealLength(index);
 					ArrayList<String> newfile = new ArrayList<String>();
 					for (int i = 0; i < index; i++) newfile.add(file[i]);
 					for (int i = (index+leng); i < file.length; i++) newfile.add(file[i]);
@@ -488,15 +501,15 @@ public class ConfigWriter { //запись и изменение конфига
 		if (set) {
 			if (!neew) {
 				if (file == null) {log.warn("ConfigWriter delArray: error, null file"); return;}
-				ConfigLoader loader = new ConfigLoader();
-				loader.fakeLoad(file);
-				int index = ind; if (index == -1) index = loader.methods.recIndexNoSection(name);
+				ConfigLoader loader = new ConfigLoader(file);
+				LoaderMethods lm = loader.getMethods();
+				int index = ind; if (index == -1) index = lm.recIndexNoSection(name);
 				if (index > -1) {
-					boolean skobka = loader.methods.checkArray(index).skobka;
+					boolean skobka = lm.checkArray(index).skobka;
 					if (skobka) {
 						delOption(name, index);
 					} else {
-						int leng = loader.methods.getArrayRealLength(index);
+						int leng = lm.getArrayRealLength(index);
 						ArrayList<String> newfile = new ArrayList<String>();
 						for (int i = 0; i < index; i++) newfile.add(file[i]);
 						for (int i = (index+leng); i < file.length; i++) newfile.add(file[i]);
@@ -526,9 +539,8 @@ public class ConfigWriter { //запись и изменение конфига
 		if (set) {
 			if (!neew) {
 				if (file == null) {log.warn("ConfigWriter delOptionInSection: error, null file"); return;}
-				ConfigLoader loader = new ConfigLoader();
-				loader.fakeLoad(file);
-				int index = loader.methods.recIndexInSection(section, name);
+				ConfigLoader loader = new ConfigLoader(file);
+				int index = loader.getMethods().recIndexInSection(section, name);
 				if (index > -1) {
 					delOption(name, index);
 				} else log.warn("ConfigWriter: error delete var " + name + " from section " + section + ", var not found");
@@ -547,9 +559,8 @@ public class ConfigWriter { //запись и изменение конфига
 		if (set) {
 			if (!neew) {
 				if (file == null) {log.warn("ConfigWriter delArrayInSection: error, null file"); return;}
-				ConfigLoader loader = new ConfigLoader();
-				loader.fakeLoad(file);
-				int index = loader.methods.recIndexInSection(section, name);
+				ConfigLoader loader = new ConfigLoader(file);
+				int index = loader.getMethods().recIndexInSection(section, name);
 				if (index > -1) {
 					delArray(name, index);
 				} else log.warn("ConfigWriter: error delete array " + name + " from section " + section + ", array not found");
@@ -566,9 +577,8 @@ public class ConfigWriter { //запись и изменение конфига
 		if (set) {
 			if (!neew) {
 				if (file == null) {log.warn("ConfigWriter delSection: error, null file"); return;}
-				ConfigLoader loader = new ConfigLoader();
-				loader.fakeLoad(file);
-				int index = loader.methods.recIndexSection(section);
+				ConfigLoader loader = new ConfigLoader(file);
+				int index = loader.getMethods().recIndexSection(section);
 				if (index > -1) {
 					int leng = loader.getSectionRealLength(section);
 					ArrayList<String> newfile = new ArrayList<String>();
@@ -609,7 +619,7 @@ public class ConfigWriter { //запись и изменение конфига
 		if (loader == null) return null;
 		//если в конфиге с нулевой строки идет секция и одна одна в конфиге
 		//значит можно выдавать ConfigLoader с соответствующим параметром
-		if (loader.methods.checkSection(0) && loader.getSectionNames().length == 1) {
+		if (loader.getMethods().checkSection(0) && loader.getSectionNames().length == 1) {
 			loader.setThisIsSection();
 		}
 		return loader;
@@ -659,14 +669,11 @@ public class ConfigWriter { //запись и изменение конфига
 		 * @return конфиг в виде массива строк
 		 */
 		public final String[] getData() {return file;}
-		/**
-		 * получть весь класс
-		 * @return new WriterMethods()
-		 */
-		public WriterMethods getMethods() {return new WriterMethods();} //получить весь класс
 	}
 	/**
-	 * инициализированный объект WriterMethods
+	 * получить WriterMethods
 	 */
-	public WriterMethods methods = new WriterMethods();
+	public WriterMethods getMethods() {
+		return new WriterMethods();
+	}
 }
