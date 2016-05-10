@@ -343,7 +343,7 @@ public class ConfigWriter { //запись и изменение конфига
 						newfile.add(prob + name + ": '" + value + '\'');
 					} else { //если позиция плавающая
 						newfile.clear();
-						for (int i = 0; i <= (sec + loader.getSectionRealLength(section) - 1) & i < file.length; i++) newfile.add(file[i]);
+						for (int i = 0; i <= (sec + loader.getSectionRealLength(section) - 1) && i < file.length; i++) newfile.add(file[i]);
 						int p = lm.recProbels(file[sec]);
 						String prob = "  ";
 						for (int i = 0; i <= p; i++) prob += ' ';
@@ -420,7 +420,7 @@ public class ConfigWriter { //запись и изменение конфига
 						}
 					} else { //если позиция плавающая
 						newfile.clear();
-						for (int i = 0; i <= (sec + loader.getSectionRealLength(section) - 1) & i < file.length; i++) newfile.add(file[i]);
+						for (int i = 0; i <= (sec + loader.getSectionRealLength(section) - 1) && i < file.length; i++) newfile.add(file[i]);
 						int p = lm.recProbels(file[sec]);
 						String prob = "  ";
 						for (int i = 0; i <= p; i++) prob += ' ';

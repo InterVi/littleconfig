@@ -307,7 +307,7 @@ public class Utils { //разные полезные методы
 	 * @return true если операция удалась; false если нет
 	 */
 	public static boolean saveFile(InputStream stream, File file) { //сохранить поток в файл
-		if (stream == null | file == null) return false;
+		if (stream == null || file == null) return false;
 		try {
 			FileOutputStream fos = new FileOutputStream(file);
 			byte[] buff = new byte[65536];
@@ -333,7 +333,7 @@ public class Utils { //разные полезные методы
 	 * @return массив строк с произведенной заменой
 	 */
 	public String[] replacePart(String[] value, String[] replace, int firstIndex, int lastIndex) {
-		if (value == null | replace == null) return null;
+		if (value == null || replace == null) return null;
 		if (firstIndex < 0 | lastIndex < 0) return null;
 		ArrayList<String> list = new ArrayList<String>();
 		for (int i = 0; i < firstIndex & i < value.length; i++) {
