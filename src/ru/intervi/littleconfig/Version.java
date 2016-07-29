@@ -3,7 +3,7 @@ package ru.intervi.littleconfig;
 /**
  * Данные о версии и авторе. Лицензия: GNU GPL v3
  * @author InterVi
- * @version 0.4.2
+ * @version 0.4.3
  */
 
 public class Version { //информация о библиотеке
@@ -11,7 +11,7 @@ public class Version { //информация о библиотеке
 	 * версия библиотееки
 	 * {@value}
 	 */
-	public static final String VERSION = "0.4.2";
+	public static final String VERSION = "0.4.3";
 	/**
 	 * автор
 	 * {@value}

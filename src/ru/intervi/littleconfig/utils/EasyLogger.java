@@ -125,7 +125,7 @@ public class EasyLogger { //класс для вывода сообщений в
 	public void info(String text) {
 		if (text == null) return;
 		String mess = info + ' ' + prefix + " [" + d.format(new Date()) + "] " + text;
-		if (send & sinfo) System.out.println(mess);
+		if (send && sinfo) System.out.println(mess);
 		toFile.log(mess, TypeMess.INFO);
 		memlog.put(mess, TypeMess.INFO);
 		sendToList(mess, TypeMess.INFO);
@@ -147,7 +147,7 @@ public class EasyLogger { //класс для вывода сообщений в
 	public void warn(String text) {
 		if (text == null) return;
 		String mess = warn + ' ' + prefix + " [" + d.format(new Date()) + "] " + text;
-		if (send & swarn) System.out.println(mess);
+		if (send && swarn) System.out.println(mess);
 		toFile.log(mess, TypeMess.WARN);
 		memlog.put(mess, TypeMess.WARN);
 		sendToList(mess, TypeMess.WARN);
@@ -169,7 +169,7 @@ public class EasyLogger { //класс для вывода сообщений в
 	public void error(String text) {
 		if (text == null) return;
 		String mess = error + ' ' + prefix + " [" + d.format(new Date()) + "] " + text;
-		if (send & serror) System.out.println(mess);
+		if (send && serror) System.out.println(mess);
 		toFile.log(mess, TypeMess.ERROR);
 		memlog.put(mess, TypeMess.ERROR);
 		sendToList(mess, TypeMess.ERROR);

@@ -4,7 +4,6 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.io.IOException;
 
 import ru.intervi.littleconfig.ConfigLoader.ClearResult;
@@ -118,7 +117,7 @@ public class ConfigWriter { //запись и изменение конфига
 	 * @throws IOException ошибка при записи
 	 */
 	public void writeFile() throws IOException { //запись массива file
-		if (set && file != null & patch != null) {
+		if ((set && file != null) && patch != null) {
 			BufferedWriter write = new BufferedWriter(new FileWriter(patch));
 			//запись массива
 			for (int i = 0; i < file.length; i++) {
@@ -263,21 +262,9 @@ public class ConfigWriter { //запись и изменение конфига
 					//заполнение массива
 					file = new String[(one.size()+two.size()+paste.size())];
 					int pos = 0;
-					Iterator<String> iter = one.iterator();
-					while(iter.hasNext()) {
-						file[pos] = iter.next();
-						pos++;
-					}
-					iter = paste.iterator();
-					while(iter.hasNext()) {
-						file[pos] = iter.next();
-						pos++;
-					}
-					iter = two.iterator();
-					while(iter.hasNext()) {
-						file[pos] = iter.next();
-						pos++;
-					}
+					for (int i = 0; i < one.size(); i++, pos++) file[pos] = one.get(i);
+					for (int i = 0; i < paste.size(); i++, pos++) file[pos] = paste.get(i);
+					for (int i = 0; i < two.size(); i++, pos++) file[pos] = two.get(i);
 				} else { //если нужно добавить новый массив
 					ArrayList<String> newfile = new ArrayList<String>();
 					for (int i = 0; i < file.length; i++) newfile.add(file[i]);
@@ -610,7 +597,7 @@ public class ConfigWriter { //запись и изменение конфига
 	 * @return ConfigLoader с загруженной секцикй либо null в случае ошибки, либо пустой класс (необходимо проверять через {@link ru.intervi.littleconfig.ConfigLoader#isLoad()})
 	 */
 	public ConfigLoader getLoaderSection() {
-		if (!set | file == null) {log.warn("ConfigWriter getLoaderSection: config not set or file == null"); return null;}
+		if (!set || file == null) {log.warn("ConfigWriter getLoaderSection: config not set or file == null"); return null;}
 		if (file.length == 0) {log.warn("ConfigWriter getLoaderSection: file empty"); return null;}
 		ConfigLoader loader = null;
 		try {

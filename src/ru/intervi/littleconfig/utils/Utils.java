@@ -334,9 +334,9 @@ public class Utils { //разные полезные методы
 	 */
 	public String[] replacePart(String[] value, String[] replace, int firstIndex, int lastIndex) {
 		if (value == null || replace == null) return null;
-		if (firstIndex < 0 | lastIndex < 0) return null;
+		if (firstIndex < 0 || lastIndex < 0) return null;
 		ArrayList<String> list = new ArrayList<String>();
-		for (int i = 0; i < firstIndex & i < value.length; i++) {
+		for (int i = 0; i < firstIndex && i < value.length; i++) {
 			if (value[i] != null) list.add(value[i]);
 		}
 		for (int i = 0; i < replace.length; i++) {

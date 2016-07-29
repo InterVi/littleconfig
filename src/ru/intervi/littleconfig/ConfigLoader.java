@@ -385,15 +385,12 @@ public class ConfigLoader { //чтение конфига из файла и п�
 							if (ok) q = i;
 							continue;
 						}
-					} else if (sq2 >= sq) { //поиск второй кавычки
+					} else if (sq2 >= sq || sts > -1) { //поиск второй кавычки
 						if (q2 == -1 && c[i] == '"') {
 							stq = i;
 							boolean ok = true; //только если кавычка действительно на конце строки
 							for (int n = (i+1); n < c.length; n++) {
-								switch(c[n]) {
-								case ' ':
-									continue;
-								default:
+								if (c[n] != ' ') {
 									ok = false;
 									n = c.length;
 								}
@@ -425,15 +422,12 @@ public class ConfigLoader { //чтение конфига из файла и п�
 							if (ok) q3 = i;
 							continue;
 						}
-					} else if (sq2 >= sq) { //поиск второй кавычки
+					} else if (sq2 >= sq || sts > -1) { //поиск второй кавычки
 						if (q4 == -1 && c[i] == '\'') {
 							stq = i;
 							boolean ok = true; //только если кавычка действительно на конце строки
 							for (int n = (i+1); n < c.length; n++) {
-								switch(c[n]) {
-								case ' ':
-									continue;
-								default:
+								if (c[n] != ' ') {
 									ok = false;
 									n = c.length;
 								}
@@ -561,18 +555,18 @@ public class ConfigLoader { //чтение конфига из файла и п�
 				result.broken = false;
 			}
 		} else {
-			if (q >= 0 & q3 == -1) result.firstquote = q;
-			if (q3 >= 0 & q == -1) result.firstquote = q3;
-			if (q2 >= 0 & q4 == -1) result.lastquote = q2;
-			if (q4 >= 0 & q2 == -1) result.lastquote = q4;
+			if (q >= 0 && q3 == -1) result.firstquote = q;
+			if (q3 >= 0 && q == -1) result.firstquote = q3;
+			if (q2 >= 0 && q4 == -1) result.lastquote = q2;
+			if (q4 >= 0 && q2 == -1) result.lastquote = q4;
 		}
 		if (d > -1) {
 			if (q2 == -1 && q4 == -1) {
 				//если кавычек нет - вырезаем контент между двоеточием и концом строки (или комментом)
 				char ch[] = s.trim().toCharArray();
 				boolean ok = true; //проверка, есть ли контент между двоеточием и комментом (кроме пробелов)
-				if (ci > -1 & d < ci && Utils.trim(s.substring((d+1), ci)).length() <= 0) ok = false;
-				if (ch[(ch.length-1)] != ':' && ci == -1 | ok) { //если строка кончается двоеточием - она бракованная
+				if ((ci > -1 && d < ci) && Utils.trim(s.substring((d+1), ci)).length() <= 0) ok = false;
+				if (ch[(ch.length-1)] != ':' && (ci == -1 || ok)) { //если строка кончается двоеточием - она бракованная
 					if (ci == -1) result.content = s.substring((d+1), s.length()).trim();
 					else result.content = s.substring((d+1), ci).trim();
 					result.broken = false;
@@ -647,7 +641,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 					continue;
 				} else if (cr.broken && cr.colon != -1) continue; else break;
 			}
-			if (cr.empty || cr.origin == null | cr.fullstr) continue;
+			if (cr.empty || (cr.origin == null || cr.fullstr)) continue;
 			if (cr.colon != -1 || cr.hypindex != -1) break; //если строка - не часть значения другого параметра
 			if (getProbels(file[i]) < p) break; //если у строки пробелов в начале меньше - это не часть значения
 			String part = cr.origin.trim();
@@ -989,8 +983,8 @@ public class ConfigLoader { //чтение конфига из файла и п�
 				for (int i = (index+1); i < file.length; i++) {
 					ClearResult r = clearStr(file[i]);
 					if (r.empty) continue;
-					if (r.hypindex == -1) continue;
 					if (r.colon > -1) break; //выход из цикла при попадании на опцию или секцию
+					if (r.hypindex == -1) continue;
 					String add = getFullStr(i); //получаем готовый элемент
 					if (add != null) {
 						char q1 = add.charAt(0); //чистка от кавычек
@@ -1299,7 +1293,7 @@ public class ConfigLoader { //чтение конфига из файла и п�
 			else result = TypeValue.DOUBLE;
 		} catch(NumberFormatException e) {
 			//проверка на булеву
-			if (str.equalsIgnoreCase("true") | str.equalsIgnoreCase("false")) result = TypeValue.BOOLEAN;
+			if (str.equalsIgnoreCase("true") || str.equalsIgnoreCase("false")) result = TypeValue.BOOLEAN;
 			else result = TypeValue.STRING;
 		} catch(Exception e) {log.error(e); result = TypeValue.NULL;}
 		return result;
@@ -1389,8 +1383,8 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		if (get && file != null) {
 			for (int i = 0; i < file.length; i++) {
 				ClearResult r = clearStr(file[i]);
-				if (r.broken & r.name != null) {
-					if (isSection(i) & r.name.equals(name)) {
+				if (r.broken && r.name != null) {
+					if (isSection(i) && r.name.equals(name)) {
 						result = i;
 						break;
 					}
@@ -1424,12 +1418,12 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		if (index >= file.length) {log.warn("ConfigLoader isSection: failed, index > file.length"); return result;}
 		if (get && file != null) {
 			ClearResult r = clearStr(file[index]);
-			if (r.broken && r.colon != -1) { //строка не должна быть опцией
+			if (r.broken) { //строка не должна быть опцией
 				int p = getProbels(file[index])+1;
 				for (int i = (index+1); i < file.length; i++) {
 					if (p > getProbels(file[i])) break; //выход из цикла
 					ClearResult c = clearStr(file[i]);
-					if (c.empty | c.fullstr) continue; //пропуск не нужного
+					if (c.empty || c.fullstr) continue; //пропуск не нужного
 					if (c.colon > -1) { //если найдена опция - значит это секция
 						result = true;
 						break;
@@ -1618,16 +1612,16 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		if (index < 0) {log.warn("ConfigLoader getSection: index < 0"); return null;}
 		if (!get || file == null) {log.warn("ConfigLoader getSection(int index): failed, config not loaded or file == null"); return null;}
 		int l = getSectionRealLength(index);
-		ConfigLoader loader = new ConfigLoader();
+		ConfigLoader result = new ConfigLoader();
 		if (l > 0) {
 			String sec[] = new String[l];
-			for (int i = index; i < (index+l) & i < file.length; i++) sec[(i-index)] = file[i];
+			for (int i = index; i < (index+l) && i < file.length; i++) sec[(i-index)] = file[i];
 			try {
-				loader.fakeLoad(sec);
-				loader.tsc = true;
+				result.fakeLoad(sec);
+				result.tsc = true;
 			} catch(Exception e) {log.error(e);}
 		}
-		return loader;
+		return result;
 	}
 	
 	/**
@@ -1654,18 +1648,12 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	public ConfigLoader getSectionInSection(String section, String name) {
 		if (name == null || section == null) {log.warn("ConfigLoader getSectionInSection: null name or null section"); return null;}
 		if (!get || file == null) {log.warn("ConfigLoader getSectionInSection: config not set"); return null;}
-		int index = getIndexSection(name);
-		ConfigLoader loader = null;
+		int index = getIndexInSection(section, name);
+		ConfigLoader result = null;
 		if (index >= 0) {
-			int leng = getSectionRealLength(index);
-			for (int i = (index+1); i < (index+leng) && i < file.length; i++) {
-				if (isSection(i) && name.equals(clearStr(file[i]).name)) {
-					loader = getSection(i);
-					break;
-				}
-			}
+			if (isSection(index)) result = getSection(index);
 		} else log.warn("ConfigLoader getSectionInSection: " + name + " in " + section + " failed, index < 0");
-		return loader;
+		return result;
 	}
 	
 	/**
@@ -2173,6 +2161,14 @@ public class ConfigLoader { //чтение конфига из файла и п�
 				}
 			}
 			return result;
+		}
+		/**
+		 * получить реальную длинну секции
+		 * @param index индекс секции в конфиге
+		 * @return количество строк в секции (-1 в случае ошибки)
+		 */
+		public int recSectionRealLength(int index) {
+			return getSectionRealLength(index);
 		}
 	}
 	/**
