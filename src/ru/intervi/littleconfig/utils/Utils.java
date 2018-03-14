@@ -143,6 +143,21 @@ public class Utils { //разные полезные методы
 	}
 	
 	/**
+	 * получить float из строки
+	 * @param s строка с числом
+	 * @return числовое значение из строки (0 в случае ошибки)
+	 */
+	public static float floatFromString(String s) {
+		if (s == null) return 0;
+		try {
+			return Float.parseFloat(s);
+		} catch(Exception e) {
+			log.error(e);
+			return 0;
+		}
+	}
+	
+	/**
 	 * получить double из строки
 	 * @param s строка с числом
 	 * @return числовое значение из строки (0 в случае ошибки)
@@ -235,6 +250,23 @@ public class Utils { //разные полезные методы
 			result = new long[s.length];
 			for (int i = 0; i < s.length; i++) {
 				if (s[i] != null) result[i] = Long.parseLong(s[i]);
+			}
+		} catch(Exception e) {log.error(e);}
+		return result;
+	}
+	
+	/**
+	 * массив float из массива строк
+	 * @param s массив строк
+	 * @return массив float (null в случае ошибки)
+	 */
+	public static float[] floatFromStringArray(String s[]) {
+		if (s == null) return null;
+		float result[] = null;
+		try {
+			result = new float[s.length];
+			for (int i = 0; i < s.length; i++) {
+				if (s[i] != null) result[i] = Float.parseFloat(s[i]);
 			}
 		} catch(Exception e) {log.error(e);}
 		return result;

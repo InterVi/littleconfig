@@ -3,7 +3,7 @@ package ru.intervi.littleconfig;
 /**
  * Данные о версии и авторе. Лицензия: GNU GPL v3
  * @author InterVi
- * @version 0.4.3
+ * @version 0.4.4
  */
 
 public class Version { //информация о библиотеке
@@ -11,7 +11,7 @@ public class Version { //информация о библиотеке
 	 * версия библиотееки
 	 * {@value}
 	 */
-	public static final String VERSION = "0.4.3";
+	public static final String VERSION = "0.4.4";
 	/**
 	 * автор
 	 * {@value}
@@ -21,12 +21,12 @@ public class Version { //информация о библиотеке
 	 * e-mail автора
 	 * {@value}
 	 */
-	public static final String EMAIL = "progir@ya.ru";
+	public static final String EMAIL = "intervionly@gmail.com";
 	/**
 	 * страница проекта
 	 * {@value}
 	 */
-	public static final String HOMEPAGE = "http://bitbucket.org/InterVi/littleconfig";
+	public static final String HOMEPAGE = "https://github.com/InterVi/littleconfig";
 	/**
 	 * лицензия
 	 * {@value}

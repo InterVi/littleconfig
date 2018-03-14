@@ -846,6 +846,20 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		return getLong(getIndexNoSection(name));
 	}
 	
+	private float getFloat(int index) {
+		return Utils.floatFromString(getString(index));
+	}
+	
+	/**
+	 * получить значение переменной в виде float
+	 * @param name имя переменной
+	 * @return значение переменной в виде float (0, если значение не найдено)
+	 */
+	public float getFloat(String name) {
+		if (name == null) {log.warn("ConfigLoader getFloat: null name"); return -1;}
+		return getFloat(getIndexNoSection(name));
+	}
+	
 	private double getDouble(int index) { //получение переменной типа double по индексу
 		return Utils.doubleFromString(getString(index));
 	}
@@ -1148,6 +1162,20 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	public long[] getLongArray(String name) { //получение массива типа long по названию
 		if (name == null) {log.warn("ConfigLoader getLongArray: null name"); return null;}
 		return getLongArray(getIndexNoSection(name));
+	}
+	
+	private float[] getFloatArray(int index) {
+		return Utils.floatFromStringArray(getStringArray(index));
+	}
+	
+	/**
+	 * получить значение переменной в виде массива float
+	 * @param name имя переменной
+	 * @return значение переменной в виде массива float (null, если не найдено)
+	 */
+	public float[] getFloatArray(String name) {
+		if (name == null) {log.warn("ConfigLoader getFloatArray: null name"); return null;}
+		return getFloatArray(getIndexNoSection(name));
 	}
 	
 	private double[] getDoubleArray(int index) { //получение массива типа double по индексу
@@ -1614,8 +1642,8 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		int l = getSectionRealLength(index);
 		ConfigLoader result = new ConfigLoader();
 		if (l > 0) {
-			String sec[] = new String[l];
-			for (int i = index; i < (index+l) && i < file.length; i++) sec[(i-index)] = file[i];
+			String sec[] = new String[l-1];
+			for (int i = index+1; i < (index+l) && i < file.length; i++) sec[(i-index-1)] = file[i];
 			try {
 				result.fakeLoad(sec);
 				result.tsc = true;
@@ -1786,6 +1814,21 @@ public class ConfigLoader { //чтение конфига из файла и п�
 	}
 	
 	/**
+	 * получить значение переменной в виде float из секции
+	 * @param section имя секции
+	 * @param name имя переменной
+	 * @return значение переменной в виде float (-1, если переменная не найдена)
+	 */
+	public float getFloatInSection(String section, String name) {
+		float result = -1;
+		if (name == null || section == null) {log.warn("ConfigLoader getFloatInSection: null name or null section"); return result;}
+		if (get && file != null) {
+			result = getFloat(getIndexInSection(section, name));
+		} else log.warn("ConfigLoader getFloatInSection: failed get " + name + " in " + section + ", config not loaded or file == null");
+		return result;
+	}
+	
+	/**
 	 * получить значение переменной в виде double из секции
 	 * @param section имя секции
 	 * @param name имя переменной
@@ -1889,6 +1932,21 @@ public class ConfigLoader { //чтение конфига из файла и п�
 		if (get && file != null) {
 			result = getLongArray(getIndexInSection(section, name));
 		} else log.warn("ConfigLoader getLongArrayInSection: failed get " + name + " in " + section + ", config not loaded or file == null");
+		return result;
+	}
+	
+	/**
+	 * получить значение переменной в виде массива float из секции
+	 * @param section имя секции
+	 * @param name имя переменной
+	 * @return значение переменной в виде массива float (null, если переменная не найдена)
+	 */
+	public float[] getFloatArrayInSection(String section, String name) {
+		float[] result = null;
+		if (name == null || section == null) {log.warn("ConfigLoader getFloatArrayInSection: null name or null section"); return result;}
+		if (get && file != null) {
+			result = getFloatArray(getIndexInSection(section, name));
+		} else log.warn("ConfigLoader getFloatArrayInSection: failed get " + name + " in " + section + ", config not loaded or file == null");
 		return result;
 	}
 	
