@@ -32,8 +32,9 @@ public class ParsedConfig {
 	 * основной конструктор
 	 * @param loader загруженный {@link ru.intervi.littleconfig.ConfigLoader}
 	 * @param stringsOnly true - не парсить типы, загружать всё в STRINGS и STRING_ARRAYS
+	 * @param onlyLongDouble парсить все числа только в LONGS, DOUBLES, LONG_ARRAYS и DOUBLE_ARRAYS, в зависимости от их типа
 	 */
-	public ParsedConfig(ConfigLoader loader, boolean stringsOnly) {
+	public ParsedConfig(ConfigLoader loader, boolean stringsOnly, boolean onlyLongDouble) {
 		HashMap<String, String> strings = new HashMap<>();
 		HashMap<String, Byte> bytes = new HashMap<>();
 		HashMap<String, Short> shorts = new HashMap<>();
@@ -63,19 +64,23 @@ public class ParsedConfig {
 					strings.put(name, loader.getString(name));
 					break;
 				case BYTE:
-					bytes.put(name, loader.getByte(name));
+					if (onlyLongDouble) longs.put(name, loader.getLong(name));
+					else bytes.put(name, loader.getByte(name));
 					break;
 				case SHORT:
-					shorts.put(name, loader.getShort(name));
+					if (onlyLongDouble) longs.put(name, loader.getLong(name));
+					else shorts.put(name, loader.getShort(name));
 					break;
 				case INT:
-					integers.put(name, loader.getInt(name));
+					if (onlyLongDouble) longs.put(name, loader.getLong(name));
+					else integers.put(name, loader.getInt(name));
 					break;
 				case LONG:
 					longs.put(name, loader.getLong(name));
 					break;
 				case FLOAT:
-					floats.put(name, loader.getFloat(name));
+					if (onlyLongDouble) doubles.put(name, loader.getDouble(name));
+					else floats.put(name, loader.getFloat(name));
 					break;
 				case DOUBLE:
 					doubles.put(name, loader.getDouble(name));
@@ -87,19 +92,23 @@ public class ParsedConfig {
 					stringArrays.put(name, loader.getStringArray(name));
 					break;
 				case BYTE_ARRAY:
-					byteArrays.put(name, loader.getByteArray(name));
+					if (onlyLongDouble) longArrays.put(name, loader.getLongArray(name));
+					else byteArrays.put(name, loader.getByteArray(name));
 					break;
 				case SHORT_ARRAY:
-					shortArrays.put(name, loader.getShortArray(name));
+					if (onlyLongDouble) longArrays.put(name, loader.getLongArray(name));
+					else shortArrays.put(name, loader.getShortArray(name));
 					break;
 				case INT_ARRAY:
-					integerArrays.put(name, loader.getIntArray(name));
+					if (onlyLongDouble) longArrays.put(name, loader.getLongArray(name));
+					else integerArrays.put(name, loader.getIntArray(name));
 					break;
 				case LONG_ARRAY:
 					longArrays.put(name, loader.getLongArray(name));
 					break;
 				case FLOAT_ARRAY:
-					floatArrays.put(name, loader.getFloatArray(name));
+					if (onlyLongDouble) doubleArrays.put(name, loader.getDoubleArray(name));
+					else floatArrays.put(name, loader.getFloatArray(name));
 					break;
 				case DOUBLE_ARRAY:
 					doubleArrays.put(name, loader.getDoubleArray(name));
